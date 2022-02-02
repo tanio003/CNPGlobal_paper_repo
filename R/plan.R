@@ -1,9 +1,9 @@
 plan  <-  drake::drake_plan(
   # Data -------------------------------------------------
-  POM_all = read.csv("data/POM_all.csv"),
-  POM_genomes_selected = read.csv("data/POM_genomes_selected"),
-  # Data wrangling for various analyses
-  POM_all_binned = bin_data_1by1(POM_all),
+  POM_all = read.csv("data/POM_all.csv"),                               # all POM data
+  POM_genomes_selected = read.csv("data/POM_genomes_selected"),         # POM data paired with genomics
+  # Data wrangling for various analyses 
+  POM_all_binned = bin_data_1by1(POM_all),                              
   POM_genomes_selected_binned = bin_data_1by1(POM_genomes_selected),
   POM_all_gam = clean_data_for_gam(POM_all), 
   POM_genomes_selected_gam = clean_data_for_gam(POM_genomes_selected),
@@ -26,9 +26,22 @@ plan  <-  drake::drake_plan(
     "output/tables"
   },
   sp_table_2 = {
-    make_cnp_table(CNP_global_mean, sgnf = 1, tab_out_folder, "sp_table_2.csv")
+    make_cnp_table(CNP_global_mean, sgnf = 1, rownames = TRUE, tab_out_folder, "sp_table_2.csv")
   },
   sp_table_3 = {
-    make_cnp_table(CNP_global_mean_binned, sgnf = 1, tab_out_folder,  "sp_table_3.csv")
+    make_cnp_table(CNP_global_mean_binned, sgnf = 1, rownames = TRUE, tab_out_folder,  "sp_table_3.csv")
+  },
+  sp_table_4 = {
+    make_region_cnp_summary(cp_boxplot(POM_all), rownames = FALSE, tab_out_folder,  "sp_table_4.csv")
+  },
+  sp_table_5 = {
+    make_region_cnp_summary(np_boxplot(POM_all), rownames = FALSE, tab_out_folder,  "sp_table_5.csv")
+  },
+  sp_table_6 = {
+    make_region_cnp_summary(cn_boxplot(POM_all), rownames = FALSE, tab_out_folder,  "sp_table_6.csv")
   }
+
+
+
+
 )

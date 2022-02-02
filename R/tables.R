@@ -2,17 +2,18 @@
 # AUXILLIARY FUNCTIONS
 ######################
 
-export_csv <- function(object, tab_out_folder, out_file, verbose = TRUE) {
+export_csv <- function(object, tab_out_folder, out_file, verbose = TRUE, rownames = FALSE) {
   out_path <- file.path(tab_out_folder, out_file)
   if (verbose) {
     message("Saving ", out_path, " to file")
   }
-  write.csv(object, out_path, row.names = TRUE)
+  write.csv(object, out_path, row.names = rownames)
   object
 }
 
 # Function to make summary plot from a box plot
-region_cnp_summmary <- function(x) {
+make_region_cnp_summary <- function(x, ...) {
+  region <- c("Polar", "Subpolar", "Subtropical","Tropical")
   mean <- round((ggplot_build(x)$data[[3]]$y), digits = 1)
   median <- round(rev(ggplot_build(x)$data[[1]]$middle),digits = 1)
   ci.lb <- round(rev(ggplot_build(x)$data[[1]]$ymin), digits = 1)
@@ -23,7 +24,7 @@ region_cnp_summmary <- function(x) {
                                median,
                                ci.lb,
                                ci.ub,
-                               n)
+                               n) %>% export_csv(...)
 }
 
 # Function to make CNP global mean summary table

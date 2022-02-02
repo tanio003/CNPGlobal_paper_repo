@@ -90,7 +90,6 @@ data_binned$area_weights = cos(deg2rad(data_binned$Latitude))
 data_binned
 }
 # Function to prepare dataset for GAM analyses
-# Removing sample points with NaNs in key covariates for conducing gam
 clean_data_for_gam <- function(data) {
   data_for_gam <- data %>% dplyr::select(logCP, logNP, logCN,
                                           SST, 

@@ -15,11 +15,10 @@ cp_boxplot <- function(POM_all) {
   scale_x_discrete(limits=rev) + 
     labs(y = 'C:P', x = '') + 
     stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
-    ylim(75,250) +
+    ylim(62.5,237.5) +
     theme_bw() + 
     theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 } + coord_flip() + theme(axis.text.y = element_text(angle = 45))
-  cp_box
 }
 
 # Function to make np_box plot
@@ -30,11 +29,10 @@ np_boxplot <- function(POM_all) {
   scale_x_discrete(limits=rev) + 
     labs(y = 'N:P', x = '') + 
     stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
-    ylim(10,35) +
+    ylim(10,34) +
     theme_bw() + 
     theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 } + coord_flip()
-  np_box
 }
 
 # Function to make cn_box plot
@@ -49,7 +47,6 @@ cn_boxplot <- function(POM_all) {
     theme_bw() +
     theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 } + coord_flip()
-  cn_box
 }
 
 
