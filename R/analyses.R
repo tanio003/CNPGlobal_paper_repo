@@ -81,11 +81,12 @@ bin_data_1by1 <- function(data) {
                              ifelse(absLatitude >= 15 & absLatitude < 45, "Subtropical",
                                     ifelse(absLatitude >= 45 & absLatitude < 65, "Subpolar",
                                            "Polar"))),            
-            area_weights = cos(deg2rad(Latitude)),
+            # area_weights = cos(deg2rad(Latitude)),
             sp_Nutlim_CESM2 = getmode(sp_Nutlim_CESM2)
             )  %>% replace_with_na_all(condition = ~.x == -Inf) %>% mutate(Latitude = lat_grid[as.integer(binlat)],Longitude = lon_grid[as.integer(binlon)])
 data_binned$region <- factor(data_binned$region,
                                       levels = c("Polar", "Subpolar", "Subtropical","Tropical"))
+data_binned$area_weights = cos(deg2rad(data_binned$Latitude))
 data_binned
 }
 # Function to prepare dataset for GAM analyses
@@ -103,4 +104,21 @@ clean_data_for_gam <- function(data) {
                                           ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% tidyr::drop_na(SST, MLPAR, logNO3_fill, logPO4_fill, Nstar_200_GLODAP, Nutcline_GLODAP_1um) 
   data_for_gam
 }
+
+# Function to calculate area-weighted global mean C:N:P
+calc_cnp_global_mean <- function(POM_all) {
+  cnp_global <- summarise(POM_all, 
+          meancp_global = exp(weighted.mean(logCP, area_weights)),
+          meancp_ci_lb = exp(weighted.ttest.ci(logCP, area_weights)[1]),
+          meancp_ci_ub = exp(weighted.ttest.ci(logCP, area_weights)[2]),
+          meannp_global = exp(weighted.mean(logNP, area_weights)),
+          meannp_ci_lb = exp(weighted.ttest.ci(logNP, area_weights)[1]),
+          meannp_ci_ub = exp(weighted.ttest.ci(logNP, area_weights)[2]),          
+          meancn_global = exp(weighted.mean(logCN, area_weights)),
+          meancn_ci_lb = exp(weighted.ttest.ci(logCN, area_weights)[1]),
+          meancn_ci_ub = exp(weighted.ttest.ci(logCN, area_weights)[2]),          
+          nsamples = n())
+  cnp_global
+}
+
 
