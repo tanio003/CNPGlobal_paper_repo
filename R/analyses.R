@@ -99,7 +99,8 @@ clean_data_for_gam <- function(data) {
                                           Nstar_200_GLODAP,
                                           MLPAR,
                                          sp_Nutlim_CESM2,
-                                         absLatitude
+                                         absLatitude,
+					 contains("Nutlim")
                                           ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% tidyr::drop_na(SST, MLPAR, logNO3_fill, logPO4_fill, Nstar_200_GLODAP, Nutcline_GLODAP_1um) 
   data_for_gam
 }
@@ -119,5 +120,94 @@ calc_cnp_global_mean <- function(POM_all) {
           nsamples = n())
   cnp_global
 }
+
+# Function to separate high latitude with absolute latitude of 45 degrees
+sep_data_highlat <- function(data,latitude = 45) {
+  data_highlat <- dplyr::filter(data, absLatitude >= latitude)  
+  data_highlat
+}
+
+# Function to separate low latitude data with absolute latitude of 45 degrees
+sep_data_lowlat <- function(data,latitude = 45) {
+  data_lowlat <- dplyr::filter(data, absLatitude < latitude)
+  data_lowlat
+}
+
+# Function to select variables for Correlation analyses and standardize data
+clean_data_for_corr <- function(POM_all) {
+  POM_all_corr <- POM_all %>% dplyr::select(logCP, logNP, logCN,
+                                          absLatitude,
+                                          SST,
+                                          logNO3_fill,
+                                          logPO4_fill,
+                                          logFeT,
+                                          Nutcline_GLODAP_1um,
+                                          # Nstar_200_GLODAP,
+                                          MLD_Holte17,
+                                          MLPAR,
+                                          CHLOR_a_MODIS,
+                                          frac_dia_NOBM,
+                                          frac_cya_NOBM,
+                                          sp_Nutlim_CESM2
+                                          ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% drop_na(SST, MLPAR, logNO3_fill, logPO4_fill,sp_Nutlim_CESM2)
+  scaled.POM_all_corr <- data.frame(scale(POM_all_corr[,1:ncol(POM_all_corr)-1]))
+}
+
+# Function to get correlation matrix with column and rownames
+M.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE, colnames = FALSE) {
+  if (highlat) {
+  # For nutricline manually assign value of 0
+  scaled.POM_all_corr$Nutcline_GLODAP_1um <- rep(0,length(scaled.POM_all_corr$Nutcline_GLODAP_1um))
+  }
+  M.scaled.POM_corr <- cor(scaled.POM_all_corr,
+                                  method = c("pearson"), 
+                                  use = "pairwise.complete.obs")
+  M.POM_corr_selected <- M.scaled.POM_corr[1:3,4:ncol(M.scaled.POM_corr)] 
+  if (colnames) {
+  colnames(M.POM_corr_selected) <- paste(c("Abs.Latitude",
+                                           "SST","Nitrate","Phosphate", "FeT", 
+                                           "Nutricline", 
+                                           "MLD", "MLPAR", "Chl-a",
+                                           "% Diatoms", "% Cyano"
+                                           ))
+  } else {
+  colnames(M.POM_corr_selected) <- paste(c("",
+                                           "","","","",
+                                           "", 
+                                           "", "", "",
+                                           "", ""
+                                           ))    
+  }
+  rownames(M.POM_corr_selected) <- paste(c("C:P", "N:P", "C:N"))
+  M.POM_corr_selected
+}
+
+# Function to get pvalue for correlation matrix
+testRes.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE) {
+  if (highlat) {
+  # For nutricline manually assign value of 0
+  scaled.POM_all_corr$Nutcline_GLODAP_1um <- rep(0,length(scaled.POM_all_corr$Nutcline_GLODAP_1um))
+  } 
+  M.scaled.POM_corr <- cor(scaled.POM_all_corr,
+                                  method = c("pearson"), 
+                                  use = "pairwise.complete.obs")
+  M.POM_corr_selected <- M.scaled.POM_corr[1:3,4:ncol(M.scaled.POM_corr)] 
+  testRes = cor.mtest(scaled.POM_all_corr,method = c("pearson"), use = "pairwise.complete.obs", conf.level = 0.95)
+  testRes_selected = testRes$p[1:3,4:ncol(M.scaled.POM_corr)]
+  testRes_selected  <- ifelse(testRes_selected < 0.001, "***",
+                        ifelse(testRes_selected < 0.01, "**",
+                               ifelse(testRes_selected < 0.05, "*",
+                                      "n.s.")))
+  testRes_selected
+}
+
+
+
+
+
+
+
+
+
 
 

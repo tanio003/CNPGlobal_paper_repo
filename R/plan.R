@@ -1,18 +1,23 @@
 plan  <-  drake::drake_plan(
   # Data -------------------------------------------------
-  POM_all = read.csv("data/POM_all.csv"),                               # all POM data
-  POM_genomes_selected = read.csv("data/POM_genomes_selected"),         # POM data paired with genomics
-  # Data wrangling for various analyses 
+  POM_all = read.csv("data/POM_all.csv"),                           # all POM data after selection
+  POM_genomes_selected = read.csv("data/POM_genomes_selected.csv"), # POM data paired with genome-based nut limitation
+  # Data wrangling for various analyses ------------------
   POM_all_binned = bin_data_1by1(POM_all),                              
   POM_genomes_selected_binned = bin_data_1by1(POM_genomes_selected),
   POM_all_gam = clean_data_for_gam(POM_all), 
   POM_genomes_selected_gam = clean_data_for_gam(POM_genomes_selected),
-  POM_highlat_gam = dplyr::filter(POM_all_gam, absLatitude >= 45), 
-  POM_lowlat_gam = dplyr::filter(POM_genomes_selected_gam, absLatitude >= 45),
-
+  POM_highlat_gam = sep_data_highlat(POM_all_gam, 45), 
+  POM_lowlat_gam = sep_data_lowlat(POM_genomes_selected_gam, 45),
+  scaled.POM_highlat_corr = clean_data_for_corr(sep_data_highlat(POM_all, 45)),
+  scaled.POM_lowlat_corr = clean_data_for_corr(sep_data_lowlat(POM_all, 45)),
   # Analyses ---------------------------------------------
   CNP_global_mean = calc_cnp_global_mean(tibble(POM_all)),
   CNP_global_mean_binned = calc_cnp_global_mean(tibble(POM_all_binned)),
+  M.POM_highlat_corr_selected = M.POM_corr(scaled.POM_highlat_corr,highlat = TRUE, colnames = TRUE),
+  M.POM_lowlat_corr_selected = M.POM_corr(scaled.POM_lowlat_corr,highlat = FALSE, colnames = TRUE),
+  testRes_selected_highlat = testRes.POM_corr(scaled.POM_highlat_corr,highlat = TRUE),
+  testRes_selected_lowlat = testRes.POM_corr(scaled.POM_lowlat_corr, highlat = FALSE),
   # Figures ----------------------------------------------
   fig_out_folder = dir.create("output/figures/",
                               recursive = TRUE,
@@ -39,6 +44,18 @@ plan  <-  drake::drake_plan(
   },
   sp_table_6 = {
     make_region_cnp_summary(cn_boxplot(POM_all), rownames = FALSE, tab_out_folder,  "sp_table_6.csv")
+  },
+  sp_table_7 = {
+    make_corr_pval_table(M.POM_highlat_corr_selected , 
+			 testRes_selected_highlat,
+			 rownames = TRUE,
+			 tab_out_folder,  "sp_table_7.csv")
+  },
+  sp_table_8 = {
+    make_corr_pval_table(M.POM_lowlat_corr_selected , 
+			 testRes_selected_lowlat,
+			 rownames = TRUE,
+			 tab_out_folder,  "sp_table_8.csv")
   }
 
 

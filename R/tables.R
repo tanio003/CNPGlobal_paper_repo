@@ -27,6 +27,29 @@ make_region_cnp_summary <- function(x, ...) {
                                n) %>% export_csv(...)
 }
 
+# Function to Merge Correlation Matrix and p-value matrix by alternating columns
+merge_corr_pval <- function(odd_data, even_data, digits = 3) {
+  odd_data <- round(odd_data, digits)
+  neworder <- order(c(2*(seq_along(odd_data) - 1) + 1,
+                    2*seq_along(even_data)))
+  newtable <- cbind(odd_data, even_data)[,..neworder]
+  colnames(newtable) <- paste(c("Abs.Latitude","pval",
+                                           "SST","pval",
+                                "Nitrate", "pval",
+                                "Phosphate","pval", 
+                                "FeT", "pval",
+                                           "Nutricline", "pval",
+                                           "MLD", "pval",
+                                "MLPAR", "pval",
+                                "Chl-a", "pval",
+                                           "% Diatoms", "pval",
+                                "% Cyano","pval"
+                                           ))
+  newtable <- as.data.frame(newtable) 
+  rownames(newtable) <- paste(c("C:P", "N:P", "C:N"))
+  newtable
+}
+
 # Function to make CNP global mean summary table
 make_cnp_table <- function(CNP_global_mean, sgnf = 1, ...) {
   CP_summary <- cbind(CNP_global_mean$meancp_global,
@@ -47,4 +70,10 @@ make_cnp_table <- function(CNP_global_mean, sgnf = 1, ...) {
   rownames(CNP_summary) <- c('C:P','N:P','C:N')
   colnames(CNP_summary) <- c('Mean','l-95% CI','u-95%CI', 'n')
   CNP_summary %>% export_csv(...)
+}
+
+# Function to export corr-pval matrix to csv file
+make_corr_pval_table <- function(M.POM_corr_selected, testRes_selected, ...) {
+  merge_corr_pval_table <- merge_corr_pval(data.table(M.POM_corr_selected),
+                     data.table(testRes_selected)) %>% export_csv(...)
 }
