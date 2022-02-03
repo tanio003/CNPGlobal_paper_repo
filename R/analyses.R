@@ -89,13 +89,19 @@ bin_data_1by1 <- function(data) {
                                     ifelse(absLatitude >= 45 & absLatitude < 65, "Subpolar",
                                            "Polar"))),            
             # area_weights = cos(deg2rad(Latitude)),
-            sp_Nutlim_CESM2 = getmode(sp_Nutlim_CESM2)
+            sp_Nutlim_CESM2 = getmode(sp_Nutlim_CESM2),
+            Nutlim = getmode(Nutlim)
             )  %>% replace_with_na_all(condition = ~.x == -Inf) %>% mutate(Latitude = lat_grid[as.integer(binlat)],Longitude = lon_grid[as.integer(binlon)])
 data_binned$region <- factor(data_binned$region,
                                       levels = c("Polar", "Subpolar", "Subtropical","Tropical"))
 data_binned$area_weights = cos(deg2rad(data_binned$Latitude))
+data_binned$Nutlim = factor(data_binned$Nutlim,
+                                     levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+data_binned$sp_Nutlim_CESM2 = factor(data_binned$sp_Nutlim_CESM2,
+                                     levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
 data_binned
 }
+
 # Function to prepare dataset for GAM analyses
 clean_data_for_gam <- function(data) {
   data_for_gam <- data %>% dplyr::select(logCP, logNP, logCN,
@@ -220,6 +226,16 @@ testRes.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE) {
   testRes = cor.mtest(scaled.POM_all_corr,method = c("pearson"), use = "pairwise.complete.obs", conf.level = 0.95)
   testRes_selected = testRes$p[1:3,4:ncol(M.scaled.POM_corr)]
   testRes_selected
+}
+
+# Function to make Nutlim Data to overlay on top of CESM model nutrient limitation output
+make_obsNutlim_overlay_cesm <- function(POM_all_binned, POM_genomes_selected) {
+  POM_all_binned_selected <- POM_all_binned
+  POM_genomes_selected_binned <- bin_data_1by1(POM_genomes_selected)
+  POM_all_binned_selected$Nutlim <- rep(NA,length(POM_all_binned_selected$sp_Nutlim_CESM2))
+  POM_all_binned_selected <- POM_all_binned_selected[POM_all_binned_selected$absLatitude > max(POM_genomes_selected_binned$absLatitude),]
+  POM_genomes_selected_binned_w_highlat <- rbind(POM_genomes_selected_binned,POM_all_binned_selected)
+  return(POM_genomes_selected_binned_w_highlat)
 }
 
 

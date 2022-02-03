@@ -42,7 +42,8 @@ plan  <-  drake::drake_plan(
                 mod_CNP_no_Nutlim$mod_CN,
                 mod_CNP_Nutcline_Nutlim_modGS$mod_CP_Nutcline_Nutlim_modGS,
                 mod_CNP_Nutcline_Nutlim_modGS$mod_NP_Nutcline_Nutlim_modGS,
-                mod_CNP_Nutcline_Nutlim_modGS$mod_CN_Nutcline_Nutlim_modGS,                POM_genomes_selected_gam_w_highlat),			    
+                mod_CNP_Nutcline_Nutlim_modGS$mod_CN_Nutcline_Nutlim_modGS,
+	       	POM_genomes_selected_gam_w_highlat),			    
   sp_fig_1_pdf = make_sp_fig_1(file_out("output/figures/sp_fig_1.pdf"), fig_out_folder,POM_all),
 
   # Tables -----------------------------------------------
