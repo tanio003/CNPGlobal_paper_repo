@@ -4,11 +4,13 @@ plan  <-  drake::drake_plan(
   POM_genomes_selected = read.csv("data/POM_genomes_selected.csv"), # POM data paired with genome-based nut limitation
   # Data wrangling for various analyses ------------------
   POM_all_binned = bin_data_1by1(POM_all),                              
-  POM_genomes_selected_binned = bin_data_1by1(POM_genomes_selected),
-  POM_all_gam = clean_data_for_gam(POM_all), 
-  POM_genomes_selected_gam = clean_data_for_gam(POM_genomes_selected),
-  POM_highlat_gam = sep_data_highlat(POM_all_gam, 45), 
-  POM_lowlat_gam = sep_data_lowlat(POM_genomes_selected_gam, 45),
+  # POM_genomes_selected_binned = bin_data_1by1(POM_genomes_selected),
+  # POM_all_gam = clean_data_for_gam(POM_all), 
+  # POM_genomes_selected_gam = clean_data_for_gam(POM_genomes_selected),
+  # POM_highlat_gam = sep_data_highlat(POM_all_gam, 45), 
+  # POM_lowlat_gam = sep_data_lowlat(POM_genomes_selected_gam, 45),
+  POM_highlat_gam = clean_data_for_gam(POM_all) %>% sep_data_highlat(45),
+  POM_lowlat_gam = clean_data_for_gam(POM_genomes_selected) %>% sep_data_lowlat(POM_genomes_selected_gam, 45),
   scaled.POM_highlat_corr = clean_data_for_corr(sep_data_highlat(POM_all, 45)),
   scaled.POM_lowlat_corr = clean_data_for_corr(sep_data_lowlat(POM_all, 45)),
   # Analyses ---------------------------------------------
