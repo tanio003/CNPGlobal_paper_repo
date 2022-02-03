@@ -13,6 +13,7 @@ data/
 *.rda
 *.rds
 *.html
+*.swp
 TODO.md
 *~$*
 ./*.pdf

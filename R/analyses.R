@@ -251,7 +251,7 @@ get_pval_gam <- function(b1) {
   pvalue_gam <- ifelse(pvalue_gam < 0.001, "***", 
                         ifelse(pvalue_gam < 0.01, "**",
                                ifelse(pvalue_gam < 0.05, "*",
-                                      "")))
+                                      "n.s.")))
   pvalue_gam
 }
 
@@ -260,11 +260,11 @@ make_CNP_pval_highlat <- function(data = POM_highlat_gam) {
   xvar1 <- "SST"
   xvar2 <- "logNO3_fill"  
   cp_pvalue_highlat <- get_pval_gam(b1_2vars(xvar1, xvar2, "logCP", data))
-  cp_pvalue_highlat<- R.utils::insert(cp_pvalue_highlat,ats=3,values=c("","",""))  
+  cp_pvalue_highlat<- R.utils::insert(cp_pvalue_highlat,ats=3,values=c("n.s.","n.s.",""))  
   np_pvalue_highlat <- get_pval_gam(b1_2vars(xvar1, xvar2, "logNP", data))
-  np_pvalue_highlat<- R.utils::insert(np_pvalue_highlat,ats=3,values=c("","",""))  
+  np_pvalue_highlat<- R.utils::insert(np_pvalue_highlat,ats=3,values=c("n.s.","n.s.",""))  
   cn_pvalue_highlat <- get_pval_gam(b1_2vars(xvar1, xvar2, "logCN", data))
-  cn_pvalue_highlat<- R.utils::insert(cn_pvalue_highlat,ats=3,values=c("","","")) 
+  cn_pvalue_highlat<- R.utils::insert(cn_pvalue_highlat,ats=3,values=c("n.s.","n.s.","")) 
   CNP_highlat_pval <- as.data.frame(cbind(cp_pvalue_highlat,np_pvalue_highlat,cn_pvalue_highlat))
   rownames(CNP_highlat_pval) <- c("SST", "Nitrate","Nutricline", "Nutricline x Nutlim","Total")
   colnames(CNP_highlat_pval) <- c('C:P','N:P','C:N')  

@@ -81,3 +81,22 @@ make_corr_pval_table <- function(M.POM_corr_selected, testRes_selected, ...) {
   merge_corr_pval_table <- merge_corr_pval(data.table(M.POM_corr_selected),
                      data.table(testRes_selected)) %>% export_csv(...)
 }
+
+# Function to Merge Deviance explained and p-value matrix by alternating columns and export to csv
+make_devexpl_pval_table <- function(odd_data, even_data, digits = 3, ...) {
+  odd_data <- data.table(round(odd_data, digits))
+  odd_data <- transpose(odd_data)
+  even_data <- data.table(transpose(even_data))
+  neworder <- order(c(2*(seq_along(odd_data) - 1) + 1,
+                    2*seq_along(even_data)))
+  newtable <- cbind(odd_data, even_data)[,..neworder]
+  colnames(newtable) <- paste(c("SST","pval",
+                                "Nitrate", "pval",
+                                "Nutricline","pval",
+                                "Nutricline x Nutlim", "pval",
+                                           "Total", "pval"
+                                           ))
+  newtable <- as.data.frame(newtable)
+  rownames(newtable) <- paste(c("C:P", "N:P", "C:N"))
+  newtable %>% export_csv(...)
+}

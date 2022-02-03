@@ -69,7 +69,22 @@ plan  <-  drake::drake_plan(
 			 testRes_selected_lowlat,
 			 rownames = TRUE,
 			 tab_out_folder,  "sp_table_8.csv")
+  },
+  sp_table_9 = {
+    make_devexpl_pval_table(CNP_highlat_gam_devexpl,
+			   CNP_highlat_gam_pval, 
+			   digits = 3,
+			   rownames = TRUE,
+			 tab_out_folder,  "sp_table_9.csv")
+  },
+  sp_table_10 = {
+    make_devexpl_pval_table(CNP_lowlat_gam_devexpl,
+			   CNP_lowlat_gam_pval, 
+			   digits = 3,
+			   rownames = TRUE,
+			 tab_out_folder,  "sp_table_10.csv")
   }
+
 
 
 
