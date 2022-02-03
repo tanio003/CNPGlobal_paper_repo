@@ -107,6 +107,50 @@ make_fig_1 <- function(dest, fig_out_folder,POM_all) {
 }
 
 
+# Function to make Figure 2 in pdf (cosmetic treatments are done with Adobe Illustrator)
+make_fig_2 <- function(dest,
+                       fig_out_folder,
+                       M.POM_highlat_corr_selected,
+                       M.POM_lowlat_corr_selected,
+                       testRes_selected_highlat,
+                       testRes_selected_lowlat,
+                       CNP_highlat_gam_devexpl,
+                       CNP_lowlat_gam_devexpl) {
+  pdf(dest, width = 5.5, height = 4)
+  par(mfrow=c(2,2))
+  p1 <- fig_2a(M.POM_highlat_corr_selected,testRes_selected_highlat, title_name = "Polar & Subpolar")
+  p2 <- fig_2b(CNP_highlat_gam_devexpl)
+  p3 <- fig_2a(M.POM_lowlat_corr_selected,testRes_selected_lowlat, title_name = "Tropical & Subtropical")
+  p4 <- fig_2b(CNP_lowlat_gam_devexpl)
+  dev.off()
+}
+
+fig_2a <- function(M.POM_highlat_corr_selected,testRes_selected_highlat, title_name) {
+  fig <- corrplot(M.POM_highlat_corr_selected, p.mat = testRes_selected_highlat,
+          col = rev(brewer.rdbu(40)),
+          method = "circle", 
+          cl.cex = 0.5,
+          sig.level = c(0.001, 0.01, 0.05), insig = 'label_sig',pch.cex = 0.7,tl.col="black", tl.srt=45,
+          title = title_name, mar=c(0,0,1,0),na.label = "NA")
+}
+
+fig_2b <- function(CNP_highlat_gam_devexpl) {
+  fig <- barplot(as.matrix(CNP_highlat_gam_devexpl[1:4,]), width = c(0.5,0.5,0.5,0.5),
+        col = brewer.pal(nrow(CNP_highlat_gam_devexpl[1:4,]), "Set1"),
+        font.axis=2,
+        cex.names=0.75,
+        las = 1,
+        legend = c('SST', 'Nitrate', 'Nutricline', 'Nutricline x Nutlim'),
+        xlim = c(0, ncol(CNP_highlat_gam_devexpl) + 0.2),
+        ylim = c(0, 0.7),
+        ylab = 'Explained Deviance',
+        args.legend = list(
+          x = ncol(CNP_highlat_gam_devexpl)*0.9,
+          y = max(colSums(CNP_highlat_gam_devexpl[1:4,])) + 0.8,
+          bty = "n", cex=0.75
+        )
+        )
+}
 
 make_sp_fig_1 <- function(dest, fig_out_folder,POM_all) {
 	
@@ -124,3 +168,5 @@ make_sp_fig_1 <- function(dest, fig_out_folder,POM_all) {
 	server$close()
 
 }
+
+

@@ -23,7 +23,7 @@ weighted.ttest.ci <- function(x, weights, conf.level = 0.95) {
     cint * stderr
 }
 
-# Function for conducting Tukey HSD test on Nutrient limitation as ac categorial variable with full gam model
+# Function for conducting Tukey HSD test on Nutrient limitation as a categorial variable with full gam model
 Nutlim_effect_cnp_gam_summary <- function(model) {
   contr <- matrix(0, nrow = 6, ncol = length(coef(model)))
   colnames(contr) <- names(coef(model))
@@ -102,6 +102,12 @@ clean_data_for_gam <- function(data) {
                                          absLatitude,
 					 contains("Nutlim")
                                           ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% tidyr::drop_na(SST, MLPAR, logNO3_fill, logPO4_fill, Nstar_200_GLODAP, Nutcline_GLODAP_1um) 
+
+  if("Nutlim" %in% colnames(data_for_gam))
+    {
+  data_for_gam$Nutlim = factor(data_for_gam$Nutlim,
+                                     levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+  }
   data_for_gam
 }
 
@@ -198,10 +204,117 @@ testRes.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE) {
 }
 
 
+##################################
+# FUNCTIONS RELATED TO GAM ANALYSES
+##################################
 
+# Function to conduct GAM with 2 variables with no interactions
+b1_2vars <- function(xvar1, xvar2, yvar, data) {
+  b1 <- gam(as.formula(paste(yvar, "~", "s(",xvar1,")","+", "s(",xvar2,")")),data = data, method ="REML",na.action = na.omit)
+}
 
+# Functions to conduct GAM with 4 predetermined variables (SST, NO3, Nutricline, Nutlim) with interactions between Nutricline and Nutlim under model GS
+# 1. C:P
+b1_4vars_nutlim_modGS_CP <- function(data){
+  b1 <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
+              s(logNO3_fill, bs = "tp", k = 4) +
+              s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
+              s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit)
+  b1
+  #Nutlim_effect_cnp_gam_summary(b1) # For conducting Tukey HSD 
+}
+# 2. N:P
+b1_4vars_nutlim_modGS_NP <- function(data){
+  b1 <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
+              s(logNO3_fill, bs = "tp", k = 4) +
+              s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
+              s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit)
+  b1
+  #Nutlim_effect_cnp_gam_summary(b1) # For conducting Tukey HSD 
+}
+# 3. C:N
+b1_4vars_nutlim_modGS_CN <- function(data){
+  b1 <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
+              s(logNO3_fill, bs = "tp", k = 4) +
+              s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
+              s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit)
+  b1
+  #Nutlim_effect_cnp_gam_summary(b1) # For conducting Tukey HSD 
+}
 
+# Function to extract p-values from GAM and convert to significance symbols
+get_pval_gam <- function(b1) {
+  pvalue_gam <- p.adjust(summary(b1)$s.table[,4])
+  pvalue_gam <- ifelse(pvalue_gam < 0.001, "***", 
+                        ifelse(pvalue_gam < 0.01, "**",
+                               ifelse(pvalue_gam < 0.05, "*",
+                                      "")))
+  pvalue_gam
+}
 
+# Function to make CNP gam p-value summary table for high latitude
+make_CNP_pval_highlat <- function(data = POM_highlat_gam) {
+  xvar1 <- "SST"
+  xvar2 <- "logNO3_fill"  
+  cp_pvalue_highlat <- get_pval_gam(b1_2vars(xvar1, xvar2, "logCP", data))
+  cp_pvalue_highlat<- R.utils::insert(cp_pvalue_highlat,ats=3,values=c("","",""))  
+  np_pvalue_highlat <- get_pval_gam(b1_2vars(xvar1, xvar2, "logNP", data))
+  np_pvalue_highlat<- R.utils::insert(np_pvalue_highlat,ats=3,values=c("","",""))  
+  cn_pvalue_highlat <- get_pval_gam(b1_2vars(xvar1, xvar2, "logCN", data))
+  cn_pvalue_highlat<- R.utils::insert(cn_pvalue_highlat,ats=3,values=c("","","")) 
+  CNP_highlat_pval <- as.data.frame(cbind(cp_pvalue_highlat,np_pvalue_highlat,cn_pvalue_highlat))
+  rownames(CNP_highlat_pval) <- c("SST", "Nitrate","Nutricline", "Nutricline x Nutlim","Total")
+  colnames(CNP_highlat_pval) <- c('C:P','N:P','C:N')  
+  CNP_highlat_pval
+}
+
+# Function to make CNP gam p-value summary table for low latitude
+make_CNP_pval_lowlat <- function(data = POM_lowlat_gam) {
+  cp_pvalue_lowlat <- get_pval_gam(b1_4vars_nutlim_modGS_CP(data))
+  cp_pvalue_lowlat<- R.utils::insert(cp_pvalue_lowlat,ats=5,values=c(""))  
+  np_pvalue_lowlat <- get_pval_gam(b1_4vars_nutlim_modGS_NP(data))
+  np_pvalue_lowlat<- R.utils::insert(np_pvalue_lowlat,ats=5,values=c(""))  
+  cn_pvalue_lowlat <- get_pval_gam(b1_4vars_nutlim_modGS_CN(data))
+  cn_pvalue_lowlat<- R.utils::insert(cn_pvalue_lowlat,ats=5,values=c(""))  
+  CNP_lowlat_pval <- as.data.frame(cbind(cp_pvalue_lowlat,np_pvalue_lowlat,cn_pvalue_lowlat))
+  rownames(CNP_lowlat_pval) <- c("SST", "Nitrate","Nutricline", "Nutricline x Nutlim","Total")
+  colnames(CNP_lowlat_pval) <- c('C:P','N:P','C:N')  
+  CNP_lowlat_pval
+}
+
+# Function to calculate deviance explained in high latitudes with 2 variables
+calc_devexpl_highlat <- function(xvar1, xvar2, yvar, data) {
+  result_highlat <- deviance2variables(xvar1, xvar2, yvar, data)
+  result_highlat<- R.utils::insert(result_highlat,ats=3,values=c(0,0))  
+  result_highlat
+}
+
+# Function to make CNP deviance explained summary table for high latitude
+make_CNP_devexpl_highlat <- function(data = POM_highlat_gam) {
+  xvar1 <- "SST"
+  xvar2 <- "logNO3_fill"  
+  result_cp_highlat <- calc_devexpl_highlat(xvar1, xvar2, "logCP", data)
+  result_np_highlat <- calc_devexpl_highlat(xvar1, xvar2, "logNP", data)
+  result_cn_highlat <- calc_devexpl_highlat(xvar1, xvar2, "logCN", data)
+  CNP_highlat_devexpl <- as.data.frame(cbind(result_cp_highlat[1:5],result_np_highlat[1:5],result_cn_highlat[1:5]))
+  rownames(CNP_highlat_devexpl) <- c("SST", "Nitrate","Nutricline", "Nutricline x Nutlim",'Total')
+  colnames(CNP_highlat_devexpl) <- c('C:P','N:P','C:N')  
+  round(CNP_highlat_devexpl, digits = 3)
+}
+
+# Function to make CNP deviance explained summary table for low latitude
+make_CNP_devexpl_lowlat <- function(data = POM_lowlat_gam) {
+  result_cp_lowlat <- deviance4variables_nutlim_modGS_CP(data)
+  result_np_lowlat <- deviance4variables_nutlim_modGS_NP(data)
+  result_cn_lowlat <- deviance4variables_nutlim_modGS_CN(data)
+  CNP_lowlat_devexpl <- as.data.frame(cbind(result_cp_lowlat[1:5],result_np_lowlat[1:5],result_cn_lowlat[1:5]))
+  rownames(CNP_lowlat_devexpl) <- c("SST", "Nitrate","Nutricline", "Nutricline x Nutlim",'Total')
+  colnames(CNP_lowlat_devexpl) <- c('C:P','N:P','C:N')  
+  round(CNP_lowlat_devexpl, digits = 3)
+}
 
 
 
