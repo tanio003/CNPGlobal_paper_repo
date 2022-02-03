@@ -12,7 +12,7 @@ export_csv <- function(object, tab_out_folder, out_file, verbose = TRUE, rowname
 }
 
 # Function to make summary plot from a box plot
-make_region_cnp_summary <- function(x, ...) {
+make_region_cnp_summary <- function(x) {
   region <- c("Polar", "Subpolar", "Subtropical","Tropical")
   mean <- round((ggplot_build(x)$data[[3]]$y), digits = 1)
   median <- round(rev(ggplot_build(x)$data[[1]]$middle),digits = 1)
@@ -24,7 +24,18 @@ make_region_cnp_summary <- function(x, ...) {
                                median,
                                ci.lb,
                                ci.ub,
-                               n) %>% export_csv(...)
+                               n)
+  region_summary
+}
+
+# Function to combine CNP region_summary and export to csv
+make_region_cnp_summary_combined <- function(POM_all, ...) {
+  cp_summary <- make_region_cnp_summary(cp_boxplot(POM_all))
+  np_summary <- make_region_cnp_summary(np_boxplot(POM_all))
+  cn_summary <- make_region_cnp_summary(cn_boxplot(POM_all))
+  cnp_summary <- rbind(cp_summary,np_summary,cn_summary)
+  cnp_summary <- insertRow(cnp_summary, c("C:P"), 1) %>% insertRow(c("N:P"),6) %>% insertRow(c("C:N"),11)
+  cnp_summary %>% export_csv(...)
 }
 
 # Function to Merge Correlation Matrix and p-value matrix by alternating columns

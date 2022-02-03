@@ -50,39 +50,33 @@ plan  <-  drake::drake_plan(
     make_cnp_table(CNP_global_mean_binned, sgnf = 1, rownames = TRUE, tab_out_folder,  "sp_table_3.csv")
   },
   sp_table_4 = {
-    make_region_cnp_summary(cp_boxplot(POM_all), rownames = FALSE, tab_out_folder,  "sp_table_4.csv")
+    make_region_cnp_summary_combined(POM_all, rownames = FALSE, tab_out_folder,  "sp_table_4.csv")
   },
   sp_table_5 = {
-    make_region_cnp_summary(np_boxplot(POM_all), rownames = FALSE, tab_out_folder,  "sp_table_5.csv")
-  },
-  sp_table_6 = {
-    make_region_cnp_summary(cn_boxplot(POM_all), rownames = FALSE, tab_out_folder,  "sp_table_6.csv")
-  },
-  sp_table_7 = {
     make_corr_pval_table(M.POM_highlat_corr_selected , 
 			 testRes_selected_highlat,
 			 rownames = TRUE,
-			 tab_out_folder,  "sp_table_7.csv")
+			 tab_out_folder,  "sp_table_5.csv")
   },
-  sp_table_8 = {
+  sp_table_6 = {
     make_corr_pval_table(M.POM_lowlat_corr_selected , 
 			 testRes_selected_lowlat,
 			 rownames = TRUE,
-			 tab_out_folder,  "sp_table_8.csv")
+			 tab_out_folder,  "sp_table_6.csv")
   },
-  sp_table_9 = {
+  sp_table_7 = {
     make_devexpl_pval_table(CNP_highlat_gam_devexpl,
 			   CNP_highlat_gam_pval, 
 			   digits = 3,
 			   rownames = TRUE,
-			 tab_out_folder,  "sp_table_9.csv")
+			 tab_out_folder,  "sp_table_7.csv")
   },
-  sp_table_10 = {
+  sp_table_8 = {
     make_devexpl_pval_table(CNP_lowlat_gam_devexpl,
 			   CNP_lowlat_gam_pval, 
 			   digits = 3,
 			   rownames = TRUE,
-			 tab_out_folder,  "sp_table_10.csv")
+			 tab_out_folder,  "sp_table_8.csv")
   }
 
 

@@ -8,6 +8,13 @@ getmode <- function(v) {
    uniqv[which.max(tabulate(match(v, uniqv)))]
 }
 
+# Function to inserting a row in data frame
+insertRow <- function(existingDF, newrow, r) {
+  existingDF[seq(r+1,nrow(existingDF)+1),] <- existingDF[seq(r,nrow(existingDF)),]
+  existingDF[r,] <- newrow
+  existingDF
+}
+
 # Function to calculate 95% confidence interval for weighted mean Following Eqn 6 of Hedges et al. 1999, Ecology
 weighted.ttest.ci <- function(x, weights, conf.level = 0.95) {
     require(Hmisc)
