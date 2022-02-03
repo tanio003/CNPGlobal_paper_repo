@@ -22,6 +22,8 @@ plan  <-  drake::drake_plan(
   CNP_lowlat_gam_devexpl = make_CNP_devexpl_lowlat(POM_lowlat_gam),
   CNP_highlat_gam_pval =  make_CNP_pval_highlat(POM_highlat_gam),
   CNP_lowlat_gam_pval = make_CNP_pval_lowlat(POM_lowlat_gam),
+  mod_CNP_no_Nutlim = make_mod_CNP_no_Nutlim(POM_genomes_selected_gam_w_highlat),
+  mod_CNP_Nutcline_Nutlim_modGS = make_mod_CNP_Nutcline_Nutlim_modGS(POM_genomes_selected_gam_w_highlat),
   # Figures ----------------------------------------------
   fig_out_folder = dir.create("output/figures/",
                               recursive = TRUE,
@@ -34,6 +36,13 @@ plan  <-  drake::drake_plan(
                        testRes_selected_lowlat,
                        CNP_highlat_gam_devexpl,
                        CNP_lowlat_gam_devexpl),
+  fig_3_pdf = make_fig_3(file_out("output/figures/fig_3.pdf"), fig_out_folder,
+                mod_CNP_no_Nutlim$mod_CP,
+                mod_CNP_no_Nutlim$mod_NP,
+                mod_CNP_no_Nutlim$mod_CN,
+                mod_CNP_Nutcline_Nutlim_modGS$mod_CP_Nutcline_Nutlim_modGS,
+                mod_CNP_Nutcline_Nutlim_modGS$mod_NP_Nutcline_Nutlim_modGS,
+                mod_CNP_Nutcline_Nutlim_modGS$mod_CN_Nutcline_Nutlim_modGS,                POM_genomes_selected_gam_w_highlat),			    
   sp_fig_1_pdf = make_sp_fig_1(file_out("output/figures/sp_fig_1.pdf"), fig_out_folder,POM_all),
 
   # Tables -----------------------------------------------

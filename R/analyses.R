@@ -224,7 +224,7 @@ testRes.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE) {
 
 
 ####################################################
-# FUNCTIONS RELATED TO GAM ANALYSES in MAIN FIG.2
+# FUNCTIONS RELATED TO MAIN FIG.2
 ####################################################
 
 # Function to conduct GAM with 2 variables with no interactions
@@ -335,7 +335,74 @@ make_CNP_devexpl_lowlat <- function(data = POM_lowlat_gam) {
   round(CNP_lowlat_devexpl, digits = 3)
 }
 
+####################################################
+# FUNCTIONS RELATED TO MAIN FIG.3
+####################################################
+# Function to make GAM models with default parameter settings with no nutrient limitation effect
+# Models are saved as global functions 
+make_mod_CNP_no_Nutlim <- function(data_all) {
+  mod_CP <-  gam(logCP ~ s(logNO3_fill) + s(SST) + s(Nutcline_GLODAP_1um),
+                       data  = data_all, method = "REML", family = "gaussian")
+  mod_NP <-  gam(logNP ~ s(logNO3_fill) + s(SST) + s(Nutcline_GLODAP_1um),
+                       data  = data_all, method = "REML", family = "gaussian")
+  mod_CN <-  gam(logCN ~ s(logNO3_fill) + s(SST) + s(Nutcline_GLODAP_1um),
+                       data  = data_all, method = "REML", family = "gaussian")
+  mod_CNP <- list("mod_CP"= mod_CP, "mod_NP" = mod_NP, "mod_CN" = mod_CN)
+  return(mod_CNP)
+}
 
+# Function to make SST based gam prediction of CNP (Nutricline and Nitrate kept constant)
+make_mod_CNP_SST_pred <- function(data_all, mod_CNP) {
+  mod_CNP_SST_pred <- with(data_all,
+                      expand.grid(SST=seq(min(SST), max(35), length=100),
+                                  Nutcline_GLODAP_1um = mean(data_all$Nutcline_GLODAP_1um),
+                                  logNO3_fill = mean(data_all$logNO3_fill)))
+  mod_CNP_SST_pred <- cbind(mod_CNP_SST_pred,
+                       predict(mod_CNP, 
+                               mod_CNP_SST_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+  mod_CNP_SST_pred
+}
 
+# Function to make Nitrate based gam prediction of CNP (Nutricline and SST kept constant)
+make_mod_CNP_Nitrate_pred <- function(data_all, mod_CNP) {
+  mod_CNP_Nitrate_pred <- with(data_all,
+                      expand.grid(logNO3_fill=seq(min(-6), max(4), length=100),
+                                  Nutcline_GLODAP_1um = mean(data_all$Nutcline_GLODAP_1um),
+                                  SST= mean(data_all$SST)))
+  mod_CNP_Nitrate_pred <- cbind(mod_CNP_Nitrate_pred,
+                       predict(mod_CNP, 
+                               mod_CNP_Nitrate_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+  mod_CNP_Nitrate_pred
+} 
+
+# These are same gam functions used in Figure 2, so will recycle them for consistency
+make_mod_CNP_Nutcline_Nutlim_modGS <- function(data_all) {
+  mod_CP_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_CP(data_all)
+  mod_NP_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_NP(data_all)
+  mod_CN_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_CN(data_all)
+  mod_CNP_Nutcline_Nutlim_modGS <- list("mod_CP_Nutcline_Nutlim_modGS"= mod_CP_Nutcline_Nutlim_modGS, 
+                                        "mod_NP_Nutcline_Nutlim_modGS" = mod_NP_Nutcline_Nutlim_modGS, 
+                                        "mod_CN_Nutcline_Nutlim_modGS" = mod_CN_Nutcline_Nutlim_modGS)
+  return(mod_CNP_Nutcline_Nutlim_modGS)
+}
+
+# Function to make Nutricline x Nutlim based gam prediction of CNP (Nitrate and SST kept constant)
+make_mod_CNP_Nutcline_Nutlim_pred <- function(data_all, mod_CNP_Nutcline_Nutlim_modGS) {
+  mod_CNP_Nutcline_Nutlim_pred <- with(data_all,
+                      expand.grid(Nutcline_GLODAP_1um =seq(min(0), max(300), length=300),
+                                  SST= mean(data_all$SST),
+                                  logNO3_fill = mean(data_all$logNO3_fill),
+                                  Nutlim=levels(Nutlim)))
+  mod_CNP_Nutcline_Nutlim_pred <- cbind(mod_CNP_Nutcline_Nutlim_pred,
+                       predict(mod_CNP_Nutcline_Nutlim_modGS, 
+                               mod_CNP_Nutcline_Nutlim_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+  mod_CNP_Nutcline_Nutlim_pred  
+}
 
 

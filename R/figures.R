@@ -152,6 +152,247 @@ fig_2b <- function(CNP_highlat_gam_devexpl) {
         )
 }
 
+make_fig_3a <- function(data_all, mod_CP) {
+  mod_CP_SST_pred <- make_mod_CNP_SST_pred(data_all, mod_CP)
+  fig3a <- {ggplot(data = data_all, aes(SST, exp(logCP))) + 
+      annotate("text", x=33*0.95, y=255*0.95, label= "(A)") +
+      geom_jitter(aes(color = Nutlim), size = 0.45) +   
+      geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=SST),
+                  data=mod_CP_SST_pred, 
+                  alpha=0.4, 
+                  inherit.aes=FALSE) +
+      geom_line(aes(y=exp(fit)), data=mod_CP_SST_pred, cex = 0.75)+ 
+      coord_cartesian(xlim = c(0,33), ylim = c(60, 255)) + 
+      xlab("") +
+      ylab("C:P") +
+      xlim(0,33) + 
+      ylim(60,255) + 
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
+                         labels = c(75, 100, 125, 150, 175, 200, 225)) + 
+      theme_bw(base_size = 8, base_family = "Helvetica") + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank())
+    }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank()) + theme(legend.position ="none") + scale_color_manual(values=rev(gg_color_hue(4)))
+  fig3a <- ggplotly(fig3a)
+}
+
+make_fig_3d <- function(data_all,mod_NP) {
+    mod_NP_SST_pred <- make_mod_CNP_SST_pred(data_all, mod_NP)
+    fig3d <- {ggplot(data = data_all, aes(SST, exp(logNP))) + 
+        annotate("text", x=33*0.95, y=36*0.95, label= "(D)") +
+        geom_jitter(aes(color = Nutlim), size = 0.45) +   
+        geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=SST),
+              data=mod_NP_SST_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+        geom_line(aes(y=exp(fit)), data=mod_NP_SST_pred, cex = 0.75)+ 
+        coord_cartesian(xlim = c(0,33), ylim = c(10, 36)) + 
+        xlab("") +
+        ylab("N:P") +
+        xlim(0,33) + 
+        ylim(10,36) + 
+        scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+        scale_y_continuous(breaks = c(12, 16, 20, 24, 28,32),
+                   labels = c(12, 16, 20, 24, 28,32)) +       
+        theme_bw(base_size = 8, base_family = "Helvetica") + 
+        theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+      }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+    fig3d <- ggplotly(fig3d)  
+}  
+
+make_fig_3g <- function(data_all,mod_CN) {
+    mod_CN_SST_pred <- make_mod_CNP_SST_pred(data_all, mod_CN)  
+    fig3g <- {ggplot(data = data_all, aes(SST, exp(logCN))) + 
+        annotate("text", x=33*0.95, y=9*0.95, label= "(G)") +
+        geom_jitter(aes(color = Nutlim), size = 0.45) +   
+        geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=SST),
+              data=mod_CN_SST_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+        geom_line(aes(y=exp(fit)), data=mod_CN_SST_pred, cex = 0.75)+ 
+        coord_cartesian(xlim = c(0,33),ylim = c(5, 9.0)) + 
+        xlab("SST (°C)") +
+        ylab("C:N") +
+        xlim(0,33) + 
+        ylim(5,9.0) + 
+        scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) +        
+        theme_bw(base_size = 8) + 
+        theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+      }  + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+    fig3g <- ggplotly(fig3g)
+}  
+
+make_fig_3b <- function(data_all,mod_CP) {
+  mod_CP_Nitrate_pred <- make_mod_CNP_Nitrate_pred(data_all, mod_CP)
+  fig3b <- {ggplot(data = data_all, aes(log10(exp(logNO3_fill)), exp(logCP))) + 
+      annotate("text", x=1.5*0.95, y=255*0.95, label= "(B)") +
+      geom_jitter(aes(color = Nutlim), size = 0.45) +   
+      geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=log10(exp(logNO3_fill))),
+              data=mod_CP_Nitrate_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+      geom_line(aes(y=exp(fit)), data=mod_CP_Nitrate_pred, cex = 0.75)+ 
+      coord_cartesian(xlim = c(-1.0,1.5), ylim = c(60, 255)) + 
+      xlab("") +
+      ylab("") +
+      xlim(-1.0,1.5) + 
+      ylim(60,255) + 
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
+                   labels = c(75, 100, 125, 150, 175, 200, 225)) +     
+      theme_bw(base_size = 8, base_family = "Helvetica") + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+    }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+  fig3b <- ggplotly(fig3b)
+} 
+
+make_fig_3e <- function(data_all,mod_NP) {
+    mod_NP_Nitrate_pred <- make_mod_CNP_Nitrate_pred(data_all, mod_NP)
+    fig3e <- {ggplot(data = data_all, aes(log10(exp(logNO3_fill)), exp(logNP))) + 
+        annotate("text", x=1.5*0.95, y=36*0.95, label= "(E)") +
+        geom_jitter(aes(color = Nutlim), size = 0.45) +   
+        geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=log10(exp(logNO3_fill))),
+              data=mod_NP_Nitrate_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+        geom_line(aes(y=exp(fit)), data=mod_NP_Nitrate_pred, cex = 0.75)+ 
+        coord_cartesian(xlim = c(-1.0,1.5), ylim = c(10, 36)) + 
+        xlab("") +
+        ylab("") +
+        xlim(-1.0,1.5) + 
+        ylim(10,36) + 
+        scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+        scale_y_continuous(breaks = c(12, 16, 20, 24, 28, 32),
+                   labels = c(12, 16, 20, 24, 28, 32)) +       
+        theme_bw(base_size = 8, base_family = "Helvetica") + 
+        theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+      }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+    fig3e <- ggplotly(fig3e)
+}  
+
+make_fig_3h <- function(data_all,mod_CN) {
+  mod_CN_Nitrate_pred <- make_mod_CNP_Nitrate_pred(data_all, mod_CN)
+  # Tease it so that the shading does not go below C:N of 5 for display
+  cn_shade_min <- exp(mod_CN_Nitrate_pred$fit - 2*mod_CN_Nitrate_pred$se.fit)
+  cn_shade_min <- pmax(cn_shade_min,rep(5,length(cn_shade_min)))
+  fig3h <- {ggplot(data = data_all, aes(log10(exp(logNO3_fill)), exp(logCN))) + 
+      annotate("text", x=1.5*0.95, y=9*0.95, label= "(H)") +
+      geom_jitter(aes(color = Nutlim), size = 0.45) +   
+      geom_ribbon(aes(ymin=cn_shade_min, ymax=exp(fit +2*se.fit), x=log10(exp(logNO3_fill))),
+              data=mod_CN_Nitrate_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+      geom_line(aes(y=exp(fit)), data=mod_CN_Nitrate_pred, cex = 0.75)+ 
+      coord_cartesian(xlim = c(-1.0, 1.5),ylim = c(5, 9.0)) + 
+      xlab("log10[NO3]") +
+      ylab("") +
+      xlim(-1.0,1.5) + 
+      ylim(5,9.0) + 
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      theme_bw(base_size = 8, base_family = "Helvetica") + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+    }  + theme(axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+  fig3h <- ggplotly(fig3h)
+}
+
+make_fig_3c <- function(data_all,mod_CP_Nutcline_Nutlim_modGS) {
+  mod_CP_Nutcline_Nutlim_pred <- make_mod_CNP_Nutcline_Nutlim_pred(data_all,
+                                                                 mod_CP_Nutcline_Nutlim_modGS)
+  fig3c <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logCP))) + 
+      annotate("text", x=210*0.95, y=255*0.95, label= "(C)") +
+      geom_jitter(aes(color = Nutlim), size = 0.45, alpha = 1.0) +   
+      geom_line(aes(x = Nutcline_GLODAP_1um, y=exp(fit), group = Nutlim, color = Nutlim), data=mod_CP_Nutcline_Nutlim_pred, cex = 0.75) + 
+      coord_cartesian(xlim = c(0,210), ylim = c(60, 255)) + 
+      xlab("") +
+      ylab("") +
+      xlim(0,210) + 
+      ylim(60,255) +
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
+                   labels = c(75, 100, 125, 150, 175, 200, 225)) + 
+      theme_bw(base_size = 8, base_family = "Helvetica") + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+    }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.title.y=element_blank(), axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+  fig3c <- ggplotly(fig3c)
+}  
+
+make_fig_3f <- function(data_all, mod_NP_Nutcline_Nutlim_modGS) {
+  mod_NP_Nutcline_Nutlim_pred <- make_mod_CNP_Nutcline_Nutlim_pred(data_all,
+                                                                 mod_NP_Nutcline_Nutlim_modGS)
+  fig3f <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logNP))) +
+      annotate("text", x=210*0.95, y=36*0.95, label= "(F)") +
+      geom_jitter(aes(color = Nutlim), size = 0.45, alpha = 1.0) +   
+      geom_line(aes(x = Nutcline_GLODAP_1um, y=exp(fit), group = Nutlim, color = Nutlim), data=mod_NP_Nutcline_Nutlim_pred, cex = 0.75) + 
+      coord_cartesian(xlim = c(0,210), ylim = c(10, 36)) + 
+      xlab("") +
+      ylab("") +
+      xlim(0,210) + 
+      ylim(10,36) + 
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      scale_y_continuous(breaks = c(12, 16, 20, 24, 28,32),
+                   labels = c(12, 16, 20, 24, 28,32)) +      
+      theme_bw(base_size = 8, base_family = "Helvetica") + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+    }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.title.y=element_blank(), axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+  fig3f <- ggplotly(fig3f)
+}
+
+make_fig_3i <- function(data_all, mod_CN_Nutcline_Nutlim_modGS) {
+  mod_CN_Nutcline_Nutlim_pred <- make_mod_CNP_Nutcline_Nutlim_pred(data_all,
+                                                                 mod_CN_Nutcline_Nutlim_modGS)
+  fig3i <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logCN))) +
+      annotate("text", x=210*0.95, y=9*0.95, label= "(I)") +
+      geom_jitter(aes(color = Nutlim), size = 0.45, alpha = 1.0) +
+      geom_line(aes(x = Nutcline_GLODAP_1um, y=exp(fit), group = Nutlim, color = Nutlim), data=mod_CN_Nutcline_Nutlim_pred, cex = 0.75) +
+      coord_cartesian(xlim = c(0,210), ylim = c(5, 9.0)) +
+      xlab("Nutricline (m)") +
+      ylab("") +
+      xlim(0,210) +
+      ylim(5,9.0) +
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) +
+      theme_bw(base_size = 8, base_family = "Helvetica") +
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+    }  + theme(axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+  fig3i <- ggplotly(fig3i)
+}
+
+# Legends are added manually
+make_fig_3 <- function(dest, fig_out_folder, 
+                       mod_CP,
+                       mod_NP,
+                       mod_CN,
+                       mod_CP_Nutcline_Nutlim_modGS,
+                       mod_NP_Nutcline_Nutlim_modGS,
+                       mod_CN_Nutcline_Nutlim_modGS,
+                       data_all) {
+  fig3a <- make_fig_3a(data_all, mod_CP)
+  fig3b <- make_fig_3b(data_all, mod_CP)
+  fig3c <- make_fig_3c(data_all, mod_CP_Nutcline_Nutlim_modGS)
+  fig3d <- make_fig_3d(data_all, mod_NP)
+  fig3e <- make_fig_3e(data_all, mod_NP)
+  fig3f <- make_fig_3f(data_all, mod_NP_Nutcline_Nutlim_modGS)
+  fig3g <- make_fig_3g(data_all, mod_CN)
+  fig3h <- make_fig_3h(data_all, mod_CN)
+  fig3i <- make_fig_3i(data_all, mod_CN_Nutcline_Nutlim_modGS)
+  fig3 <-plotly::subplot(fig3a, 
+                       fig3b,
+                       fig3c,
+                       fig3d, 
+                       fig3e,
+                       fig3f,
+                       fig3g, 
+                       fig3h,
+                       fig3i,
+                       nrows = 3,
+                       shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE, margin = 0.015,
+                       heights = c(0.33, 0.34, 0.33)) %>% layout(height = 300, width = 450)
+  fig3
+  orca(fig3, dest)
+  server <- orca_serve()
+  server$close()
+}
+
 make_sp_fig_1 <- function(dest, fig_out_folder,POM_all) {
 	
 	figa2 <- cp_boxplot(POM_all)
