@@ -118,6 +118,18 @@ clean_data_for_gam <- function(data) {
   data_for_gam
 }
 
+# Function to combine POM_genomes_selected_gam with POM_all_gam with max abslatitude1
+combine_data_global_gam <- function(POM_all_gam,POM_genomes_selected_gam) {
+  POM_all_gam_selected <- POM_all_gam
+  POM_all_gam_selected$Nutlim <- rep(NA,length(POM_all_gam_selected$sp_Nutlim_CESM2))
+  POM_all_gam_selected <- POM_all_gam_selected[POM_all_gam_selected$absLatitude > max(POM_genomes_selected_gam$absLatitude),]
+  POM_genomes_selected_gam_w_highlat <- rbind(POM_genomes_selected_gam,POM_all_gam_selected)
+  # Reorder factor level in nutrient limitation so P-limiation is plotted last.
+  POM_genomes_selected_gam_w_highlat$Nutlim <- factor(POM_genomes_selected_gam_w_highlat$Nutlim,levels = rev(levels(POM_genomes_selected_gam_w_highlat$Nutlim)))
+  # data_all_for_boxplot <- drop_na(data_all, Nutlim)
+  POM_genomes_selected_gam_w_highlat
+}
+
 # Function to calculate area-weighted global mean C:N:P
 calc_cnp_global_mean <- function(POM_all) {
   cnp_global <- summarise(POM_all, 
@@ -211,9 +223,9 @@ testRes.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE) {
 }
 
 
-##################################
-# FUNCTIONS RELATED TO GAM ANALYSES
-##################################
+####################################################
+# FUNCTIONS RELATED TO GAM ANALYSES in MAIN FIG.2
+####################################################
 
 # Function to conduct GAM with 2 variables with no interactions
 b1_2vars <- function(xvar1, xvar2, yvar, data) {
