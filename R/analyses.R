@@ -194,10 +194,6 @@ testRes.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE) {
   M.POM_corr_selected <- M.scaled.POM_corr[1:3,4:ncol(M.scaled.POM_corr)] 
   testRes = cor.mtest(scaled.POM_all_corr,method = c("pearson"), use = "pairwise.complete.obs", conf.level = 0.95)
   testRes_selected = testRes$p[1:3,4:ncol(M.scaled.POM_corr)]
-  testRes_selected  <- ifelse(testRes_selected < 0.001, "***",
-                        ifelse(testRes_selected < 0.01, "**",
-                               ifelse(testRes_selected < 0.05, "*",
-                                      "n.s.")))
   testRes_selected
 }
 

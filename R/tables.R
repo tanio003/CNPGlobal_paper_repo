@@ -74,6 +74,10 @@ make_cnp_table <- function(CNP_global_mean, sgnf = 1, ...) {
 
 # Function to export corr-pval matrix to csv file
 make_corr_pval_table <- function(M.POM_corr_selected, testRes_selected, ...) {
+  testRes_selected  <- ifelse(testRes_selected < 0.001, "***",
+                        ifelse(testRes_selected < 0.01, "**",
+                               ifelse(testRes_selected < 0.05, "*",
+                                      "n.s.")))
   merge_corr_pval_table <- merge_corr_pval(data.table(M.POM_corr_selected),
                      data.table(testRes_selected)) %>% export_csv(...)
 }
