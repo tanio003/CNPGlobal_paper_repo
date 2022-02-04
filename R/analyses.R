@@ -66,6 +66,10 @@ Nutlim_effect_cnp_gam_intercept <- function(model,data) {
 bin_data_1by1 <- function(data) {
   lat_grid <- seq(from = -89.5, to = 89.5, by = 1.0)
   lon_grid <- seq(from = -179.5, to = 179.5, by = 1.0)
+  if(!"Nutlim" %in% colnames(data))
+    {
+  data$Nutlim = NA
+  }
   data_binned <- data %>% 
   mutate(binlon = cut(Longitude, seq(from = -180.0, to = 180.0, by = 1.0), include.lowest = T, right = F), binlat = cut(Latitude, seq(from = -90.0, to = 90.0, by = 1.0), include.lowest = T, right = F)
          )  %>% group_by(binlat, binlon) %>%  summarise(POCavg = mean(POCavg),
@@ -421,4 +425,73 @@ make_mod_CNP_Nutcline_Nutlim_pred <- function(data_all, mod_CNP_Nutcline_Nutlim_
   mod_CNP_Nutcline_Nutlim_pred  
 }
 
+####################################################
+# FUNCTIONS RELATED TO ANALYSES of CESM2-LENS OUTPUT
+####################################################
+# Function to read CESM SST Output
+read_sst_cesm <- function(cesm_filepath, filename) {
+  sst_cesm <- nc_open(file.path(cesm_filepath, paste(filename,  sep="")))
+  sst_surf <- ncvar_get(sst_cesm, varid = "TEMP")
+  return(sst_surf)
+}
 
+# Function to read CESM Nitrate Output and set threshold minimum (default = 0.1 uM)
+read_nitrate_cesm <- function(cesm_filepath, filename, threshold = 0.1) {
+  nitrate_cesm <- nc_open(file.path(cesm_filepath, paste(filename,  sep="")))
+  nitrate_surf <- ncvar_get(nitrate_cesm, varid = "NO3")
+  nitrate_surf <- ifelse(nitrate_surf < threshold, threshold, nitrate_surf)
+  return(nitrate_surf)
+}
+
+# Function to read CESM Nutricline and multoply by correction factor (default = 1.54)
+read_nutcline_cesm <- function(cesm_filepath, filename, nutcline_correction = 1.54) {
+  nutcline_cesm <- nc_open(file.path(cesm_filepath, paste(filename,  sep="")))
+  nutcline <- ncvar_get(nutcline_cesm, varid = "Nutcline")
+  nutcline_corrected <- nutcline*nutcline_correction
+  return(nutcline_corrected)
+}
+
+# Function to read CESM SP Nutrient Limitation
+read_nutlim_cesm <- function(cesm_filepath, filename, varid) {
+  nutlim_cesm <- nc_open(file.path(cesm_filepath, paste(filename,  sep="")))
+  nutlim <- ncvar_get(nutlim_cesm, varid = varid)
+  return(nutlim)
+}
+
+# Function to extract longitude-latitude info for CESM output and make masks
+get_cesm_lonlat <- function(cesm_filepath, filename = 'TEMP_regrid_historic.nc') {
+  sst_cesm <- nc_open(file.path(cesm_filepath, paste(filename,  sep="")))
+  lon <- ncvar_get(sst_cesm, varid = "lon")
+  lat <- ncvar_get(sst_cesm, varid = "lat")
+  lat_mask <- which(abs(lat) > 55)
+  lonlat_tropical_mask <- outer(rep(1,length(lon)), ifelse(abs(lat) < 15, 1, 0))
+  lonlat_Subtropical_mask <- outer(rep(1,length(lon)), ifelse(abs(lat) >= 15 & abs(lat) < 45, 1, 0))
+  lonlat_Subpolar_mask <- outer(rep(1,length(lon)), ifelse(abs(lat) >= 45 & abs(lat) < 65, 1, 0))
+  lonlat_polar_mask <- outer(rep(1,length(lon)),  ifelse(abs(lat) >= 65, 1, 0))
+  lonlat_vector_mask <- lonlat_tropical_mask*1 + lonlat_Subtropical_mask*2 + 
+  lonlat_Subpolar_mask*3 + lonlat_polar_mask*4
+  lonlat_regions <- lonlat_vector_mask
+  lonlat_regions[lonlat_regions == 1] <- "Tropical"
+  lonlat_regions[lonlat_regions == 2] <- "Subtropical"
+  lonlat_regions[lonlat_regions == 3] <- "Subpolar"
+  lonlat_regions[lonlat_regions == 4] <- "Polar"
+  lonlat_large_regions <- lonlat_regions
+  lonlat_large_regions[lonlat_large_regions == "Subpolar" | lonlat_large_regions == "Polar"] <- "Highlat"
+  lonlat_large_regions[lonlat_large_regions == "Tropical" | lonlat_large_regions == "Subtropical"] <- "Midlowlat"
+  lonlat_grid <- outer(lon, lat, FUN = "paste")
+  lonlat_grid_lat <- outer(rep(1,length(lon)), lat)
+  lonlat_grid_lon <- outer(lon, rep(1, length(lat)))
+  area_weights = cos(deg2rad(lonlat_grid_lat))
+  
+  cesm_lonlat_data <<- list("lon"= lon, 
+                           "lat" = lat, 
+                           "lat_mask" = lat_mask,
+                           "lonlat_regions" = lonlat_regions,
+                           "lonlat_large_regions" = lonlat_large_regions,
+                           "lonlat_grid" = lonlat_grid,
+                           "lonlat_grid_lat" = lonlat_grid_lat,
+                           "lonlat_grid_lon" = lonlat_grid_lon,
+                           "area_weights" = area_weights)
+  return(cesm_lonlat_data)
+  
+}

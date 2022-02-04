@@ -397,6 +397,86 @@ make_fig_3 <- function(dest, fig_out_folder,
   server$close()
 }
 
+# Function to Make ED_Fig. 2
+make_ed_fig_2 <- function(dest,
+                          fig_out_folder,
+                          POM_genomes_selected_binned_w_highlat, 
+                          nutlim_historic,
+                          nutlim_SSP370,
+                          cesm_lonlat_info) {
+  
+  lon <- cesm_lonlat_info$lon
+  lat <- cesm_lonlat_info$lat
+  lonlat_grid_lon <- cesm_lonlat_info$lonlat_grid_lon
+  lonlat_grid_lat <- cesm_lonlat_info$lonlat_grid_lat
+  
+  # Left = Nutrient Limitation in 2010-2014 with observation overlaid
+  nutlim_historic_plot <- reshape2::melt(nutlim_historic)
+  nutlim_historic_plot$lon <- as.vector(lonlat_grid_lon)
+  nutlim_historic_plot$lat <- as.vector(lonlat_grid_lat)
+  pal <- alpha(gg_color_hue(4),0.8)
+  
+
+  
+  fig_left <- ggplot(data = nutlim_historic_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("Longitude") + 
+  ylab("Latitude") + 
+  scale_fill_fermenter_custom(pal,
+                              na.value = "black",
+                              limits = c(0, 4),
+                              breaks = seq(1, 4 ,1.0),
+                              labels = c("P","P/N","N","Fe"), guide = "none") +
+  geom_point(data = POM_genomes_selected_binned_w_highlat, aes(x = Longitude, y = Latitude, color = Nutlim), size = 0.6,show.legend = T) + 
+  ggtitle("(A) SP Nutrient limitation (2010s)") + 
+  theme_bw(base_size = 10, base_family = "Helvetica") +
+  theme(legend.position = "bottom", legend.box = "horizontal",legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid'),legend.key.size = unit(0.3, "cm")) + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  fig_left
+  
+  # Right = Nutrient Limitation in SSP370
+  nutlim_SSP370_plot <- reshape2::melt(nutlim_SSP370)
+  nutlim_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+  nutlim_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+  pal <- alpha(gg_color_hue(4),0.8)
+  
+  fig_right <- ggplot(data = nutlim_SSP370_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+    labs(y = NULL) +
+    xlab("Longitude") + 
+    ylab("Latitude") + 
+    scale_fill_fermenter_custom(pal,
+                              na.value = "black",
+                              limits = c(0, 4),
+                              breaks = seq(1, 4 ,1.0),
+                              labels = c("P","P/N","N","Fe"), guide = "none") +
+    geom_point(data = POM_genomes_selected_binned_w_highlat, aes(x = Longitude, y = Latitude, color = Nutlim), size = 0.6,show.legend = T, alpha = 0.0) + 
+    ggtitle("(B) SP Nutrient limitation (2090s)") + 
+    theme_bw(base_size = 10, base_family = "Helvetica") +
+    theme(legend.position = "bottom", legend.box = "horizontal",legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid'),legend.key.size = unit(0.3, "cm")) + 
+    theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  fig_right
+  
+ # Convert the figures to grobs
+  fig_left_grob <- ggplotGrob(fig_left)
+  fig_right_grob <- ggplotGrob(fig_right)
+  gg <- ggplot() +
+  coord_equal(xlim = c(1, 10), ylim = c(1, 6), expand = F) +
+    annotation_custom(fig_left_grob,
+                      xmin = 1, xmax = 5.5, ymin = 1, ymax = 6) +  
+      annotation_custom(fig_right_grob,
+                      xmin = 5.5, xmax = 10, ymin = 1, ymax = 6) + 
+    theme(panel.border = element_blank())
+  gg
+  ggsave(dest,
+        width = 8, # The width of the plot in inches
+        height = 5) 
+}
+
+
 make_sp_fig_1 <- function(dest, fig_out_folder,POM_all) {
 	
 	figa2 <- cp_boxplot(POM_all)
