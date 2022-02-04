@@ -3,7 +3,10 @@ plan  <-  drake::drake_plan(
   POM_all = read.csv("data/POM_all.csv"),                           # all POM data after selection
   POM_genomes_selected = read.csv("data/POM_genomes_selected.csv"), # POM data paired with genome-based nut limitation
   # Data wrangling for various analyses ------------------
-  POM_all_binned = bin_data_1by1(POM_all),                              
+  POM_all_binned = bin_data_1by1(POM_all), 
+  POM_genomes_selected_binned = bin_data_1by1(POM_genomes_selected), 
+  POM_genomes_selected_binned_w_highlat = make_obsNutlim_overlay_cesm(POM_all_binned,
+                                                                     POM_genomes_selected_binned),
   POM_all_gam = clean_data_for_gam(POM_all), 
   POM_genomes_selected_gam = clean_data_for_gam(POM_genomes_selected),
   POM_genomes_selected_gam_w_highlat = combine_data_global_gam(POM_all_gam,POM_genomes_selected_gam),
@@ -27,6 +30,7 @@ plan  <-  drake::drake_plan(
   nutlim_SSP370 = read_nutlim_cesm(cesm_filepath,
                                     'sp_Nut_lim_surf_SSP370.nc',
                                     varid = "sp_Nut_lim_surf_SSP370"),
+  cesm_lonlat_info =  get_cesm_lonlat(cesm_filepath,'TEMP_regrid_historic.nc'),
   # Analyses ---------------------------------------------
   CNP_global_mean = calc_cnp_global_mean(tibble(POM_all)),
   CNP_global_mean_binned = calc_cnp_global_mean(tibble(POM_all_binned)),
@@ -65,6 +69,15 @@ plan  <-  drake::drake_plan(
 			      nutlim_historic,
 			      nutlim_SSP370,
 			      cesm_lonlat_info),
+  ed_fig_6_pdf = make_ed_6(file_out("output/figures/ed_fig_6.pdf"),
+			   fig_out_folder,
+                           sst_surf_historic,
+                           sst_surf_SSP370,
+                           nitrate_surf_historic,
+                           nitrate_surf_SSP370,
+                           nutcline_historic,
+                           nutcline_SSP370,
+			   cesm_lonlat_info),
   sp_fig_1_pdf = make_sp_fig_1(file_out("output/figures/sp_fig_1.pdf"), fig_out_folder,POM_all),
 
   # Tables -----------------------------------------------
