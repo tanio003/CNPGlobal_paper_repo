@@ -397,12 +397,18 @@ make_fig_3 <- function(dest, fig_out_folder,
   server$close()
 }
 
-# Function to plot Figure 4
+# Function to plot Figure 4 (for N:P, turn NP = TRUE)
 make_fig_4 <- function(dest,
                        fig_out_folder,
                        cesm_lonlat_info,
                        CNP_gam_cesm,
-                       diffcp_full_PosCount_grid) {  
+                       diffcp_full_PosCount_grid,
+		       plot_title_left,
+		       plot_title_right,
+		       colbarbreak,
+		       colbartitle,
+		       colbarlimits,
+		       NP = FALSE) {  
 
   lonlat_grid <- cesm_lonlat_info$lonlat_grid
   lonlat_grid_lon <- cesm_lonlat_info$lonlat_grid_lon
@@ -411,6 +417,10 @@ make_fig_4 <- function(dest,
   # Left = Delta C:P of model GS (full)
   pred_cp_SSP370_full <- CNP_gam_cesm$pred_cp_SSP370_full
   pred_cp_historic_full <- CNP_gam_cesm$pred_cp_historic_full
+  if (NP) {
+	  pred_cp_SSP370_full <- CNP_gam_cesm$pred_np_SSP370_full
+	  pred_cp_historic_full <- CNP_gam_cesm$pred_np_historic_full 
+  }
 
   delcp_full <- pred_cp_SSP370_full - pred_cp_historic_full
   delcp_full_plot <- reshape2::melt(delcp_full)
@@ -422,13 +432,13 @@ make_fig_4 <- function(dest,
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
   xlab("Longitude") +
   ylab("Latitude") + 
-  scale_fill_cmocean(name = "balance", na.value = "black",breaks = seq(-25,25,5),limits=c(-30, 30),discrete = FALSE) + 
-  ggtitle("(A) DC:P (2090s - 2010s, SSP3-7.0)") + 
+  scale_fill_cmocean(name = "balance", na.value = "black",breaks = colbarbreak,limits=colbarlimits,discrete = FALSE) + 
+  ggtitle(plot_title_left) + 
   theme_bw(base_size = 10, base_family = "Helvetica") + 
   theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
           axis.text = element_text(colour = "black"),
           axis.ticks = element_line(colour = "black"), legend.position = "bottom") +
-  guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75,title = "DC:P (molar)", title.position = "bottom"))
+  guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75,title = colbartitle, title.position = "bottom"))
   
   # Right = Model Confidence
   modelconf_cp_full <- diffcp_full_PosCount_grid/2000*100
@@ -454,7 +464,7 @@ make_fig_4 <- function(dest,
                                   "71%+",
                                   "86%+",
                                   "100%+")) +
-  ggtitle("(B) Model agreement on the sign of DC:P") + 
+  ggtitle(plot_title_right) + 
   theme_bw(base_size = 10, base_family = "Helvetica") + 
   theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
           axis.text = element_text(colour = "black"),
@@ -476,86 +486,6 @@ make_fig_4 <- function(dest,
         width = 8, # The width of the plot in inches
         height = 5)
 
-}
-
-# Function to plot Figure 4 but for N:P
-make_fig_4_withNP <- function(dest,
-                       fig_out_folder,
-                       cesm_lonlat_info,
-                       CNP_gam_cesm,
-                       diffnp_full_PosCount_grid) {
-  
-  lonlat_grid <- cesm_lonlat_info$lonlat_grid
-  lonlat_grid_lon <- cesm_lonlat_info$lonlat_grid_lon
-  lonlat_grid_lat <- cesm_lonlat_info$lonlat_grid_lat
-  
-  # Left = Delta N:P of model GS (full)
-  pred_np_SSP370_full <- CNP_gam_cesm$pred_np_SSP370_full
-  pred_np_historic_full <- CNP_gam_cesm$pred_np_historic_full
-
-  delnp_full <- pred_np_SSP370_full - pred_np_historic_full
-  delnp_full_plot <- reshape2::melt(delnp_full)
-  delnp_full_plot$lon <- as.vector(lonlat_grid_lon)
-  delnp_full_plot$lat <- as.vector(lonlat_grid_lat)
-  
-  fig_left <- ggplot(data = delnp_full_plot, aes(x = lon, y = lat)) +
-    geom_raster(aes(fill = value)) +
-    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
-  xlab("Longitude") +
-  ylab("Latitude") + 
-  scale_fill_cmocean(name = "balance", na.value = "black",breaks = seq(-5,5,1),limits=c(-6, 6),discrete = FALSE) + 
-  ggtitle("(A) DN:P (2090s - 2010s, SSP3-7.0)") + 
-  theme_bw(base_size = 10, base_family = "Helvetica") + 
-  theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
-          axis.text = element_text(colour = "black"),
-          axis.ticks = element_line(colour = "black"), legend.position = "bottom") +
-  guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75,title = "DN:P (molar)", title.position = "bottom"))
-  
-  # Right = Model Confidence
-  modelconf_np_full <- diffnp_full_PosCount_grid/2000*100
-  modelconf_np_full_plot <- reshape2::melt(modelconf_np_full)
-  modelconf_np_full_plot$lon <- as.vector(lonlat_grid_lon)
-  modelconf_np_full_plot$lat <- as.vector(lonlat_grid_lat)
-  
-  fig_right <- ggplot(data = modelconf_np_full_plot, aes(x = lon, y = lat)) +
-    geom_raster(aes(fill = value)) +
-    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
-  labs(y = NULL) +
-  xlab("Longitude") + 
-  scale_fill_fermenter(direction = -1, 
-                       palette = "PuOr", 
-                       na.value = "black", 
-                       breaks = seq(0,100,100/7),
-                       limits=c(0, 100),
-                       labels = c("100%-",
-                                  "86%-",
-                                  "71%-",
-                                  "57%-",
-                                  "57%+",
-                                  "71%+",
-                                  "86%+",
-                                  "100%+")) +
-  ggtitle("(B) Model agreement on the sign of DN:P") + 
-  theme_bw(base_size = 10, base_family = "Helvetica") + 
-  theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
-          axis.text = element_text(colour = "black"),
-          axis.ticks = element_line(colour = "black"), legend.position = "bottom") +
-  guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75, title = "Model agreement", title.position = "bottom"))
-  
-  # Convert the figures to grobs
-  fig_left_grob <- ggplotGrob(fig_left)
-  fig_right_grob <- ggplotGrob(fig_right)
-  gg <- ggplot() +
-  coord_equal(xlim = c(1, 10), ylim = c(1, 6), expand = F) +
-    annotation_custom(fig_left_grob,
-                      xmin = 1, xmax = 5.5, ymin = 1, ymax = 6) +  
-      annotation_custom(fig_right_grob,
-                      xmin = 5.5, xmax = 10, ymin = 1, ymax = 6) + 
-    theme(panel.border = element_blank())
-  # gg
-  ggsave(dest,
-        width = 8, # The width of the plot in inches
-        height = 5)
 }
 
 ###############
