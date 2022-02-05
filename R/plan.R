@@ -101,6 +101,10 @@ plan  <-  drake::drake_plan(
                            nutcline_historic,
                            nutcline_SSP370,
 			   cesm_lonlat_info),
+  ed_fig_8_pdf = make_fig_4_withNP(file_out("output/figures/ed_fig_8.pdf"), fig_out_folder,
+			 cesm_lonlat_info,
+			 CNP_gam_cesm,
+			 diffnp_full_PosCount_grid),			    
   sp_fig_1_pdf = make_sp_fig_1(file_out("output/figures/sp_fig_1.pdf"), fig_out_folder,POM_all),
 
   # Tables -----------------------------------------------
