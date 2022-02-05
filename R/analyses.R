@@ -495,3 +495,115 @@ get_cesm_lonlat <- function(cesm_filepath, filename = 'TEMP_regrid_historic.nc')
   return(cesm_lonlat_data)
   
 }
+
+# Function to rename Nutrient limitation (from number to characters) for later analyses
+rename_nutlim_cesm <- function(nutlim_cesm) {
+  nutlim_renamed <- nutlim_cesm
+  nutlim_renamed[nutlim_renamed == 1] <- "P-lim"
+  nutlim_renamed[nutlim_renamed == 2] <- "PN-colim"
+  nutlim_renamed[nutlim_renamed == 3] <- "N-lim"
+  nutlim_renamed[nutlim_renamed == 4] <- "Fe-lim"
+  return(nutlim_renamed)
+}
+
+# Function to create cesm variable array for historic and for future
+make_cesm_var_array_for_gam <- function(sst_surf_historic,
+                                        sst_surf_SSP370,
+                                        nitrate_surf_historic,
+                                        nitrate_surf_SSP370,
+                                        nutcline_historic,
+                                        nutcline_SSP370,
+                                        nutlim_historic,
+                                        nutlim_SSP370) {
+  
+  # Nutrient Limitation in character from number
+  nutlim_historic <- rename_nutlim_cesm(nutlim_historic)
+  nutlim_SSP370 <- rename_nutlim_cesm(nutlim_SSP370)
+  
+  # Make dataset tables for C:N:P prediction
+  ## "_full" = change in SST, NO3, Nutricline and Nutrient limitation
+  ## "_Tonly" = change in SST only from the historic
+  ## "_Nonly" = change in NO3 only from the historic
+  ## "_Nutlimonly" = change in Nutrient limitation only from the historic
+  
+  newd_historic_full = data.frame(SST = as.vector(sst_surf_historic),
+                  Nutcline_GLODAP_1um = as.vector(nutcline_historic),
+                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutlim = factor(as.vector(nutlim_historic), levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+                  )
+  newd_SSP370_full = data.frame(SST = as.vector(sst_surf_SSP370),
+                  Nutcline_GLODAP_1um = as.vector(nutcline_SSP370),
+                  logNO3_fill = as.vector(log(nitrate_surf_SSP370)),
+                  Nutlim = factor(as.vector(nutlim_SSP370), 
+                                  levels = c("P-lim","PN-colim", "N-lim","Fe-lim")))
+  newd_SSP370_Tonly = data.frame(SST = as.vector(sst_surf_SSP370),
+                  Nutcline_GLODAP_1um = as.vector(nutcline_historic),        
+                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutlim = factor(as.vector(nutlim_historic), 
+                                  levels = c("P-lim","PN-colim", "N-lim","Fe-lim")))
+  newd_SSP370_Nonly = data.frame(SST = as.vector(sst_surf_historic), 
+                  Nutcline_GLODAP_1um = as.vector(nutcline_historic),                  
+                  logNO3_fill = as.vector(log(nitrate_surf_SSP370)),
+                  Nutlim = factor(as.vector(nutlim_historic), 
+                                  levels = c("P-lim","PN-colim", "N-lim","Fe-lim")))
+  newd_SSP370_Nutclineonly = data.frame(SST = as.vector(sst_surf_historic), 
+                  Nutcline_GLODAP_1um = as.vector(nutcline_SSP370),                  
+                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutlim = factor(as.vector(nutlim_historic), 
+                                  levels = c("P-lim","PN-colim", "N-lim","Fe-lim")))
+  newd_SSP370_Nutlimonly = data.frame(SST = as.vector(sst_surf_historic),
+                  Nutcline_GLODAP_1um = as.vector(nutcline_historic), 
+                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutlim = factor(as.vector(nutlim_SSP370), 
+                                  levels = c("P-lim","PN-colim", "N-lim","Fe-lim")))
+  
+  cesm_var_array_for_gam <- list("newd_historic_full" = newd_historic_full,
+                                 "newd_SSP370_full" = newd_SSP370_full,
+                                 "newd_SSP370_Tonly" = newd_SSP370_Tonly,
+                                 "newd_SSP370_Nonly" = newd_SSP370_Nonly,
+                                 "newd_SSP370_Nutclineonly" = newd_SSP370_Nutclineonly,
+                                 "newd_SSP370_Nutlimonly" = newd_SSP370_Nutlimonly
+                                   )
+  return(cesm_var_array_for_gam)
+}
+
+# Function to predict CNP with GAM and CESM variables
+predict_cnp_gam_cesm <- function(mod_CP, mod_NP, cesm_var_array_for_gam) {
+  newd_historic_full <- cesm_var_array_for_gam$newd_historic_full
+  newd_SSP370_full <- cesm_var_array_for_gam$newd_SSP370_full
+  newd_SSP370_Tonly <- cesm_var_array_for_gam$newd_SSP370_Tonly
+  newd_SSP370_Nonly <- cesm_var_array_for_gam$newd_SSP370_Nonly
+  newd_SSP370_Nutlimonly <- cesm_var_array_for_gam$newd_SSP370_Nutlimonly
+  newd_SSP370_Nutclineonly <- cesm_var_array_for_gam$newd_SSP370_Nutclineonly
+  # Predict C:P
+  pred_cp_historic_full <- array(exp(predict(mod_CP, newdata = newd_historic_full)), c(360,180))
+  pred_cp_SSP370_full <- array(exp(predict(mod_CP, newdata = newd_SSP370_full)), c(360,180))
+  pred_cp_SSP370_Tonly <- array(exp(predict(mod_CP, newdata = newd_SSP370_Tonly)), c(360,180))
+  pred_cp_SSP370_Nonly <- array(exp(predict(mod_CP, newdata = newd_SSP370_Nonly)), c(360,180))
+  pred_cp_SSP370_Nutlimonly <- array(exp(predict(mod_CP, newdata = newd_SSP370_Nutlimonly)), c(360,180))
+  pred_cp_SSP370_Nutclineonly <- array(exp(predict(mod_CP, newdata = newd_SSP370_Nutclineonly)), c(360,180))
+  # Predict N:P
+  pred_np_historic_full <- array(exp(predict(mod_NP, newdata = newd_historic_full)), c(360,180))
+  pred_np_SSP370_full <- array(exp(predict(mod_NP, newdata = newd_SSP370_full)), c(360,180))
+  pred_np_SSP370_Tonly <- array(exp(predict(mod_NP, newdata = newd_SSP370_Tonly)), c(360,180))
+  pred_np_SSP370_Nonly <- array(exp(predict(mod_NP, newdata = newd_SSP370_Nonly)), c(360,180))
+  pred_np_SSP370_Nutlimonly <- array(exp(predict(mod_NP, newdata = newd_SSP370_Nutlimonly)), c(360,180))
+  pred_np_SSP370_Nutclineonly <- array(exp(predict(mod_NP, newdata = newd_SSP370_Nutclineonly)), c(360,180))
+
+  pred_cnp_gam <- list("pred_cp_historic_full" = pred_cp_historic_full,
+                       "pred_cp_SSP370_full" = pred_cp_SSP370_full,
+                       "pred_cp_SSP370_Tonly" = pred_cp_SSP370_Tonly,
+                       "pred_cp_SSP370_Nonly" =  pred_cp_SSP370_Nonly,
+                       "pred_cp_SSP370_Nutlimonly" =  pred_cp_SSP370_Nutlimonly,
+                       "pred_cp_SSP370_Nutclineonly" = pred_cp_SSP370_Nutclineonly,
+                       "pred_np_historic_full" = pred_np_historic_full,
+                       "pred_np_SSP370_full" = pred_np_SSP370_full,
+                       "pred_np_SSP370_Tonly" = pred_np_SSP370_Tonly,
+                       "pred_np_SSP370_Nonly" = pred_np_SSP370_Nonly,
+                       "pred_np_SSP370_Nutlimonly" = pred_np_SSP370_Nutlimonly,
+                       "pred_np_SSP370_Nutclineonly" = pred_np_SSP370_Nutclineonly
+                       )
+  return(pred_cnp_gam)
+}  
+
+

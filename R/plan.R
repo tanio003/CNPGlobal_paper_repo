@@ -31,6 +31,14 @@ plan  <-  drake::drake_plan(
                                     'sp_Nut_lim_surf_SSP370.nc',
                                     varid = "sp_Nut_lim_surf_SSP370"),
   cesm_lonlat_info =  get_cesm_lonlat(cesm_filepath,'TEMP_regrid_historic.nc'),
+  cesm_var_array_for_gam = make_cesm_var_array_for_gam(sst_surf_historic,
+                                        sst_surf_SSP370,
+                                        nitrate_surf_historic,
+                                        nitrate_surf_SSP370,
+                                        nutcline_historic,
+                                        nutcline_SSP370,
+                                        nutlim_historic,
+                                        nutlim_SSP370),
   # Analyses ---------------------------------------------
   CNP_global_mean = calc_cnp_global_mean(tibble(POM_all)),
   CNP_global_mean_binned = calc_cnp_global_mean(tibble(POM_all_binned)),
@@ -44,6 +52,9 @@ plan  <-  drake::drake_plan(
   CNP_lowlat_gam_pval = make_CNP_pval_lowlat(POM_lowlat_gam),
   mod_CNP_no_Nutlim = make_mod_CNP_no_Nutlim(POM_genomes_selected_gam_w_highlat),
   mod_CNP_Nutcline_Nutlim_modGS = make_mod_CNP_Nutcline_Nutlim_modGS(POM_genomes_selected_gam_w_highlat),
+  modGS_CP = load("test/GAM_Model/modGS_CP.rda"),            # temporary GAM- check
+  modGS_NP = load("test/GAM_Model/modGS_NP.rda"),            # temporary 
+  CNP_gam_cesm = predict_cnp_gam_cesm(modGS_CP, modGS_NP, cesm_var_array_for_gam),
   # Figures ----------------------------------------------
   fig_out_folder = dir.create("output/figures/",
                               recursive = TRUE,
