@@ -397,6 +397,88 @@ make_fig_3 <- function(dest, fig_out_folder,
   server$close()
 }
 
+# Function to plot Figure 4
+make_fig_4 <- function(dest,
+                       fig_out_folder,
+                       cesm_lonlat_info,
+                       CNP_gam_cesm,
+                       diffcp_full_PosCount_grid) {  
+
+  lonlat_grid <- cesm_lonlat_info$lonlat_grid
+  lonlat_grid_lon <- cesm_lonlat_info$lonlat_grid_lon
+  lonlat_grid_lat <- cesm_lonlat_info$lonlat_grid_lat
+  
+  # Left = Delta C:P of model GS (full)
+  pred_cp_SSP370_full <- CNP_gam_cesm$pred_cp_SSP370_full
+  pred_cp_historic_full <- CNP_gam_cesm$pred_cp_historic_full
+
+  delcp_full <- pred_cp_SSP370_full - pred_cp_historic_full
+  delcp_full_plot <- reshape2::melt(delcp_full)
+  delcp_full_plot$lon <- as.vector(lonlat_grid_lon)
+  delcp_full_plot$lat <- as.vector(lonlat_grid_lat)
+  
+  fig_left <- ggplot(data = delcp_full_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  xlab("Longitude") +
+  ylab("Latitude") + 
+  scale_fill_cmocean(name = "balance", na.value = "black",breaks = seq(-25,25,5),limits=c(-30, 30),discrete = FALSE) + 
+  ggtitle("(A) DC:P (2090s - 2010s, SSP3-7.0)") + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
+          axis.text = element_text(colour = "black"),
+          axis.ticks = element_line(colour = "black"), legend.position = "bottom") +
+  guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75,title = "DC:P (molar)", title.position = "bottom"))
+  
+  # Right = Model Confidence
+  modelconf_cp_full <- diffcp_full_PosCount_grid/2000*100
+  modelconf_cp_full_plot <- reshape2::melt(modelconf_cp_full)
+  modelconf_cp_full_plot$lon <- as.vector(lonlat_grid_lon)
+  modelconf_cp_full_plot$lat <- as.vector(lonlat_grid_lat)
+  
+  fig_right <- ggplot(data = modelconf_cp_full_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("Longitude") + 
+  scale_fill_fermenter(direction = -1, 
+                       palette = "PuOr", 
+                       na.value = "black", 
+                       breaks = seq(0,100,100/7),
+                       limits=c(0, 100),
+                       labels = c("100%-",
+                                  "86%-",
+                                  "71%-",
+                                  "57%-",
+                                  "57%+",
+                                  "71%+",
+                                  "86%+",
+                                  "100%+")) +
+  ggtitle("(B) Model agreement on the sign of DC:P") + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
+          axis.text = element_text(colour = "black"),
+          axis.ticks = element_line(colour = "black"), legend.position = "bottom") +
+  guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75, title = "Model agreement", title.position = "bottom"))
+  
+  # Convert the figures to grobs
+  fig_left_grob <- ggplotGrob(fig_left)
+  fig_right_grob <- ggplotGrob(fig_right)
+  gg <- ggplot() +
+  coord_equal(xlim = c(1, 10), ylim = c(1, 6), expand = F) +
+    annotation_custom(fig_left_grob,
+                      xmin = 1, xmax = 5.5, ymin = 1, ymax = 6) +  
+      annotation_custom(fig_right_grob,
+                      xmin = 5.5, xmax = 10, ymin = 1, ymax = 6) + 
+    theme(panel.border = element_blank())
+  # gg
+  ggsave(dest,
+        width = 8, # The width of the plot in inches
+        height = 5)
+
+}
+
+
 ###############
 # EXTENDED DATA FIGURES
 ###############
@@ -491,18 +573,17 @@ make_ed_6 <- function(dest,
                       nutcline_SSP370,
 		      cesm_lonlat_info) {
 
-
   lon <- cesm_lonlat_info$lon
   lat <- cesm_lonlat_info$lat
   lonlat_grid_lon <- cesm_lonlat_info$lonlat_grid_lon
   lonlat_grid_lat <- cesm_lonlat_info$lonlat_grid_lat
-
-# Top Left (3,3,1) = SST in 2010s
-sst_historic_plot <- reshape2::melt(sst_surf_historic)
-sst_historic_plot$lon <- as.vector(lonlat_grid_lon)
-sst_historic_plot$lat <- as.vector(lonlat_grid_lat)
-
-fig_331 <- ggplot(data = sst_historic_plot, aes(x = lon, y = lat)) +
+  
+  # Top Left (3,3,1) = SST in 2010s
+  sst_historic_plot <- reshape2::melt(sst_surf_historic)
+  sst_historic_plot$lon <- as.vector(lonlat_grid_lon)
+  sst_historic_plot$lat <- as.vector(lonlat_grid_lat)
+  
+  fig_331 <- ggplot(data = sst_historic_plot, aes(x = lon, y = lat)) +
     geom_raster(aes(fill = value)) +
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) +
   labs(y = NULL) +
@@ -518,14 +599,14 @@ fig_331 <- ggplot(data = sst_historic_plot, aes(x = lon, y = lat)) +
   theme(panel.border =  element_rect(color = "gray30"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "°C", title.position = "top"))
 
-fig_331
-
-# Top Middle (3,3,2) = SST in 2090s
-sst_SSP370_plot <- reshape2::melt(sst_surf_SSP370)
-sst_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
-sst_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
-
-fig_332 <- ggplot(data = sst_SSP370_plot, aes(x = lon, y = lat)) +
+  fig_331
+  
+  # Top Middle (3,3,2) = SST in 2090s
+  sst_SSP370_plot <- reshape2::melt(sst_surf_SSP370)
+  sst_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+  sst_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+  
+  fig_332 <- ggplot(data = sst_SSP370_plot, aes(x = lon, y = lat)) +
     geom_raster(aes(fill = value)) +
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) +
   labs(y = NULL) +
@@ -541,14 +622,14 @@ fig_332 <- ggplot(data = sst_SSP370_plot, aes(x = lon, y = lat)) +
   theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "°C", title.position = "top"))
 
-fig_332
-
-# Top Right (3,3,3) = DSST (2090s-2010s)
-sst_diffSSP370hist_plot <- sst_SSP370_plot - sst_historic_plot
-sst_diffSSP370hist_plot$lon <- as.vector(lonlat_grid_lon)
-sst_diffSSP370hist_plot$lat <- as.vector(lonlat_grid_lat)
-
-fig_333 <- ggplot(data = sst_diffSSP370hist_plot, aes(x = lon, y = lat)) +
+  fig_332
+  
+  # Top Right (3,3,3) = DSST (2090s-2010s)
+  sst_diffSSP370hist_plot <- sst_SSP370_plot - sst_historic_plot
+  sst_diffSSP370hist_plot$lon <- as.vector(lonlat_grid_lon)
+  sst_diffSSP370hist_plot$lat <- as.vector(lonlat_grid_lat)
+  
+  fig_333 <- ggplot(data = sst_diffSSP370hist_plot, aes(x = lon, y = lat)) +
     geom_raster(aes(fill = value)) +
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) +
   labs(y = NULL) +
@@ -564,14 +645,14 @@ fig_333 <- ggplot(data = sst_diffSSP370hist_plot, aes(x = lon, y = lat)) +
   theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "°C", title.position = "top"))
 
-fig_333
-
-# Middle Left (3,3,4) = NO3 in 2010s
-nitrate_historic_plot <- reshape2::melt(nitrate_surf_historic)
-nitrate_historic_plot$lon <- as.vector(lonlat_grid_lon)
-nitrate_historic_plot$lat <- as.vector(lonlat_grid_lat)
-pal = cmocean("delta")(15)
-fig_334 <- ggplot(data = nitrate_historic_plot, aes(x = lon, y = lat)) +
+  fig_333
+  
+  # Middle Left (3,3,4) = NO3 in 2010s
+  nitrate_historic_plot <- reshape2::melt(nitrate_surf_historic)
+  nitrate_historic_plot$lon <- as.vector(lonlat_grid_lon)
+  nitrate_historic_plot$lat <- as.vector(lonlat_grid_lat)
+  pal = cmocean("delta")(15)
+  fig_334 <- ggplot(data = nitrate_historic_plot, aes(x = lon, y = lat)) +
     geom_raster(aes(fill = value)) +
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) +
   labs(y = NULL) +
@@ -587,15 +668,15 @@ fig_334 <- ggplot(data = nitrate_historic_plot, aes(x = lon, y = lat)) +
   theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "uM", title.position = "top",show.limits = T))
 
-fig_334
-
-# Middle Middle (3,3,5) = NO3 in 2090s
-nitrate_SSP370_plot <- reshape2::melt(nitrate_surf_SSP370)
-nitrate_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
-nitrate_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
-pal = cmocean("delta")(15)
-
-fig_335 <- ggplot(data = nitrate_SSP370_plot, aes(x = lon, y = lat)) +
+  fig_334
+  
+  # Middle Middle (3,3,5) = NO3 in 2090s
+  nitrate_SSP370_plot <- reshape2::melt(nitrate_surf_SSP370)
+  nitrate_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+  nitrate_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+  pal = cmocean("delta")(15)
+  
+  fig_335 <- ggplot(data = nitrate_SSP370_plot, aes(x = lon, y = lat)) +
     geom_raster(aes(fill = value)) +
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) +
   labs(y = NULL) +
@@ -611,14 +692,14 @@ fig_335 <- ggplot(data = nitrate_SSP370_plot, aes(x = lon, y = lat)) +
   theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "uM", title.position = "top",show.limits = T))
 
-fig_335
-
-# Middle Right (3,3,6) = DNO3 (2090s-2010s)
-nitrate_diffSSP370hist_plot <- nitrate_SSP370_plot - nitrate_historic_plot
-nitrate_diffSSP370hist_plot$lon <- as.vector(lonlat_grid_lon)
-nitrate_diffSSP370hist_plot$lat <- as.vector(lonlat_grid_lat)
-
-fig_336 <- ggplot(data = nitrate_diffSSP370hist_plot, aes(x = lon, y = lat)) +
+  fig_335
+  
+  # Middle Right (3,3,6) = DNO3 (2090s-2010s)
+  nitrate_diffSSP370hist_plot <- nitrate_SSP370_plot - nitrate_historic_plot
+  nitrate_diffSSP370hist_plot$lon <- as.vector(lonlat_grid_lon)
+  nitrate_diffSSP370hist_plot$lat <- as.vector(lonlat_grid_lat)
+  
+  fig_336 <- ggplot(data = nitrate_diffSSP370hist_plot, aes(x = lon, y = lat)) +
     geom_raster(aes(fill = value)) +
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) +
   labs(y = NULL) +
@@ -634,15 +715,15 @@ fig_336 <- ggplot(data = nitrate_diffSSP370hist_plot, aes(x = lon, y = lat)) +
   theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "uM", title.position = "top",show.limits = T))
 
-fig_336
-
-# Bottom Left (3,3,7) = Nutricline in 2010s
-nutcline_historic_plot <- reshape2::melt(nutcline_historic)
-nutcline_historic_plot$lon <- as.vector(lonlat_grid_lon)
-nutcline_historic_plot$lat <- as.vector(lonlat_grid_lat)
-
-pal = cmocean("tempo", direction = -1)(6)
-fig_337 <- ggplot(data = nutcline_historic_plot, aes(x = lon, y = lat)) +
+  fig_336
+  
+  # Bottom Left (3,3,7) = Nutricline in 2010s
+  nutcline_historic_plot <- reshape2::melt(nutcline_historic)
+  nutcline_historic_plot$lon <- as.vector(lonlat_grid_lon)
+  nutcline_historic_plot$lat <- as.vector(lonlat_grid_lat)
+  
+  pal = cmocean("tempo", direction = -1)(6)
+  fig_337 <- ggplot(data = nutcline_historic_plot, aes(x = lon, y = lat)) +
     geom_raster(aes(fill = value)) +
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) +
   labs(y = NULL) +
@@ -657,14 +738,14 @@ fig_337 <- ggplot(data = nutcline_historic_plot, aes(x = lon, y = lat)) +
   theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) +
   theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "m", title.position = "top",show.limits = TRUE))
-fig_337
-
-# Bottom Middle (3,3,8) = Nutricline in 2090s
-nutcline_SSP370_plot <- reshape2::melt(nutcline_SSP370)
-nutcline_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
-nutcline_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
-pal = cmocean("tempo", direction = -1)(12)
-fig_338 <- ggplot(data = nutcline_SSP370_plot, aes(x = lon, y = lat)) +
+  fig_337
+  
+  # Bottom Middle (3,3,8) = Nutricline in 2090s
+  nutcline_SSP370_plot <- reshape2::melt(nutcline_SSP370)
+  nutcline_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+  nutcline_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+  pal = cmocean("tempo", direction = -1)(12)
+  fig_338 <- ggplot(data = nutcline_SSP370_plot, aes(x = lon, y = lat)) +
     geom_raster(aes(fill = value)) +
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) +
   labs(y = NULL) +
@@ -680,15 +761,15 @@ fig_338 <- ggplot(data = nutcline_SSP370_plot, aes(x = lon, y = lat)) +
   theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "m", title.position = "top",show.limits = TRUE))
 
-fig_338
-
-# Bottom Right (3,3,9) = DNutricline (2090s-2010s)
-nutcline_diffSSP370hist_plot <- nutcline_SSP370_plot - nutcline_historic_plot
-nutcline_diffSSP370hist_plot$lon <- as.vector(lonlat_grid_lon)
-nutcline_diffSSP370hist_plot$lat <- as.vector(lonlat_grid_lat)
-pal = cmocean("balance")(12)
-
-fig_339 <- ggplot(data = nutcline_diffSSP370hist_plot, aes(x = lon, y = lat)) +
+  fig_338
+  
+  # Bottom Right (3,3,9) = DNutricline (2090s-2010s)
+  nutcline_diffSSP370hist_plot <- nutcline_SSP370_plot - nutcline_historic_plot
+  nutcline_diffSSP370hist_plot$lon <- as.vector(lonlat_grid_lon)
+  nutcline_diffSSP370hist_plot$lat <- as.vector(lonlat_grid_lat)
+  pal = cmocean("balance")(12)
+  
+  fig_339 <- ggplot(data = nutcline_diffSSP370hist_plot, aes(x = lon, y = lat)) +
     geom_raster(aes(fill = value)) +
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) +
   labs(y = NULL) +
@@ -704,19 +785,19 @@ fig_339 <- ggplot(data = nutcline_diffSSP370hist_plot, aes(x = lon, y = lat)) +
   theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "m", title.position = "top",show.limits = TRUE))
 
-fig_339
-
-# Convert the figures to grobs
-fig_331_grob <- ggplotGrob(fig_331)
-fig_332_grob <- ggplotGrob(fig_332)
-fig_333_grob <- ggplotGrob(fig_333)
-fig_334_grob <- ggplotGrob(fig_334)
-fig_335_grob <- ggplotGrob(fig_335)
-fig_336_grob <- ggplotGrob(fig_336)
-fig_337_grob <- ggplotGrob(fig_337)
-fig_338_grob <- ggplotGrob(fig_338)
-fig_339_grob <- ggplotGrob(fig_339)
-gg <- ggplot() +
+  fig_339
+  
+  # Convert the figures to grobs
+  fig_331_grob <- ggplotGrob(fig_331)
+  fig_332_grob <- ggplotGrob(fig_332)
+  fig_333_grob <- ggplotGrob(fig_333)
+  fig_334_grob <- ggplotGrob(fig_334)
+  fig_335_grob <- ggplotGrob(fig_335)
+  fig_336_grob <- ggplotGrob(fig_336)
+  fig_337_grob <- ggplotGrob(fig_337)
+  fig_338_grob <- ggplotGrob(fig_338)
+  fig_339_grob <- ggplotGrob(fig_339)
+  gg <- ggplot() +
   coord_equal(xlim = c(1, 17.5), ylim = c(1, 16), expand = F) +
     annotation_custom(fig_331_grob,
                       xmin = 1, xmax = 6.5, ymin = 11, ymax = 16) +
@@ -737,10 +818,10 @@ gg <- ggplot() +
       annotation_custom(fig_339_grob,
                       xmin = 12, xmax = 17.5, ymin = 1, ymax = 6) +
     theme(panel.border = element_blank())
-# gg
-ggsave(dest,
-        width = 18, # The width of the plot in inches
-        height = 15)
+
+  ggsave(dest,
+	 width = 18, # The width of the plot in inches
+	 height = 15)
 
 }
 

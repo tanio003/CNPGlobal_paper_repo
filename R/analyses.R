@@ -606,4 +606,30 @@ predict_cnp_gam_cesm <- function(mod_CP, mod_NP, cesm_var_array_for_gam) {
   return(pred_cnp_gam)
 }  
 
+# Function to take m models from posterior distribution and n models with replacement
+sim_random_posterior <- function(model,m = 1000,n = 2000, data) {
+  sim_model <- suppressWarnings(exp(simulate(model,
+                                     nsim = m,
+                                    seed = 101,
+                                         newdata = dplyr::select(data,c('SST','Nutcline_GLODAP_1um','logNO3_fill','Nutlim')))))
+   # Selecting 2000 models with replacement for each grid point
+   sim_model<- sim_model[, sample(ncol(sim_model), n, replace = TRUE)]
+}
+
+# Function to count how many of the n models build from posterior distribution of GAM predict positive change
+calc_diff_cnp_PosCount_grid <- function(mod_CNP, m, n, cesm_var_array_for_gam) {
+
+  newd_historic_full <- cesm_var_array_for_gam$newd_historic_full
+  newd_SSP370_full <- cesm_var_array_for_gam$newd_SSP370_full
+
+  sim_cnp_full_historic <- sim_random_posterior(mod_CNP, m, n, newd_historic_full)
+  sim_cnp_full_SSP370 <- sim_random_posterior(mod_CNP, m, n, newd_SSP370_full)
+
+  diffcnp_full <- sim_cnp_full_SSP370 - sim_cnp_full_historic
+  diffcnp_full_Pos_Count <- rowSums(diffcnp_full[,] > 0)
+  diffcnp_full_PosCount_grid <- array(diffcnp_full_Pos_Count, dim = c(360, 180))
+
+  return(diffcnp_full_PosCount_grid)
+}
+
 

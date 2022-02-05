@@ -52,9 +52,17 @@ plan  <-  drake::drake_plan(
   CNP_lowlat_gam_pval = make_CNP_pval_lowlat(POM_lowlat_gam),
   mod_CNP_no_Nutlim = make_mod_CNP_no_Nutlim(POM_genomes_selected_gam_w_highlat),
   mod_CNP_Nutcline_Nutlim_modGS = make_mod_CNP_Nutcline_Nutlim_modGS(POM_genomes_selected_gam_w_highlat),
-  modGS_CP = load("test/GAM_Model/modGS_CP.rda"),            # temporary GAM- check
-  modGS_NP = load("test/GAM_Model/modGS_NP.rda"),            # temporary 
+  load("test/GAM_Model/modGS_CP.rda"),            # temporary GAM- check
+  load("test/GAM_Model/modGS_NP.rda"),            # temporary 
   CNP_gam_cesm = predict_cnp_gam_cesm(modGS_CP, modGS_NP, cesm_var_array_for_gam),
+  diffcp_full_PosCount_grid = calc_diff_cnp_PosCount_grid(modGS_CP,
+                                                               m = 1000,
+                                                               n = 2000,
+                                                               cesm_var_array_for_gam),
+  diffnp_full_PosCount_grid = calc_diff_cnp_PosCount_grid(modGS_NP, 
+                                                               m = 1000,
+                                                               n = 2000,
+                                                               cesm_var_array_for_gam),
   # Figures ----------------------------------------------
   fig_out_folder = dir.create("output/figures/",
                               recursive = TRUE,
@@ -75,6 +83,10 @@ plan  <-  drake::drake_plan(
                 mod_CNP_Nutcline_Nutlim_modGS$mod_NP_Nutcline_Nutlim_modGS,
                 mod_CNP_Nutcline_Nutlim_modGS$mod_CN_Nutcline_Nutlim_modGS,
 	       	POM_genomes_selected_gam_w_highlat),
+  fig_4_pdf = make_fig_4(file_out("output/figures/fig_4.pdf"), fig_out_folder,
+			 cesm_lonlat_info,
+			 CNP_gam_cesm,
+			 diffcp_full_PosCount_grid),			    
   ed_fig_2_pdf = make_ed_fig_2(file_out("output/figures/ed_fig_2.pdf"),fig_out_folder,
 			      POM_genomes_selected_binned_w_highlat,
 			      nutlim_historic,
