@@ -572,7 +572,7 @@ make_ed_fig_2 <- function(dest,
 }
 
 # Function to make ED_Fig. 6
-make_ed_6 <- function(dest,
+make_ed_fig_6 <- function(dest,
                       fig_out_folder,
                       sst_surf_historic,
                       sst_surf_SSP370,
@@ -812,19 +812,19 @@ make_ed_6 <- function(dest,
                       xmin = 1, xmax = 6.5, ymin = 11, ymax = 16) +
     annotation_custom(fig_332_grob,
                       xmin = 6.5, xmax = 12, ymin = 11, ymax = 16) +
-      annotation_custom(fig_333_grob,
+    annotation_custom(fig_333_grob,
                       xmin = 12, xmax = 17.5, ymin = 11, ymax = 16) +
     annotation_custom(fig_334_grob,
                       xmin = 1, xmax = 6.5, ymin = 6, ymax = 11) +
     annotation_custom(fig_335_grob,
                       xmin = 6.5, xmax = 12, ymin = 6, ymax = 11) +
-      annotation_custom(fig_336_grob,
+    annotation_custom(fig_336_grob,
                       xmin = 12, xmax = 17.5, ymin = 6, ymax = 11) +
     annotation_custom(fig_337_grob,
                       xmin = 1, xmax = 6.5, ymin = 1, ymax = 6) +
     annotation_custom(fig_338_grob,
                       xmin = 6.5, xmax = 12, ymin = 1, ymax = 6) +
-      annotation_custom(fig_339_grob,
+    annotation_custom(fig_339_grob,
                       xmin = 12, xmax = 17.5, ymin = 1, ymax = 6) +
     theme(panel.border = element_blank())
 
@@ -832,6 +832,320 @@ make_ed_6 <- function(dest,
 	 width = 18, # The width of the plot in inches
 	 height = 15)
 
+}
+
+# Function to make Extended Data Fig. 7 (Comparing C:P and N:P (historic, SSP370, and change))
+make_ed_fig_7 <- function(dest,
+                          fig_out_folder,
+                          cesm_lonlat_info,
+                          CNP_gam_cesm,
+                          POM_all_binned) {
+  
+  lonlat_grid <- cesm_lonlat_info$lonlat_grid
+  lonlat_grid_lon <- cesm_lonlat_info$lonlat_grid_lon
+  lonlat_grid_lat <- cesm_lonlat_info$lonlat_grid_lat
+  
+  # Top Left (2,3,1) = C:P Historic (full)
+  pred_cp_historic_full <- CNP_gam_cesm$pred_cp_historic_full
+  cp_historic_plot <- reshape2::melt(pred_cp_historic_full)
+  cp_historic_plot$lon <- as.vector(lonlat_grid_lon)
+  cp_historic_plot$lat <- as.vector(lonlat_grid_lat)
+  pal = turbo(20)
+  fig_231 <- ggplot(data = cp_historic_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+        geom_raster(aes(fill = value)) +
+    scale_fill_gradientn(colors = pal,
+                              na.value = "gray30",
+                              limits = c(50, 230),
+                              breaks = c(75, 100, 120, 140, 160,180,200,220),oob=squish) +
+    geom_point(pch =21, data = POM_all_binned, aes(x = Longitude, y = Latitude, fill = exp(logCP)), size =2.0,show.legend = F, color = "transparent") +
+    ggtitle("(A) C:P (2010s)") +
+    theme_bw(base_size = 18, base_family = "Helvetica") +
+    theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+    theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "", title.position = "top",show.limits = FALSE))
+  
+  # Top Middle  (2,3,2) = C:P SSP370 (full)
+  pred_cp_SSP370_full <- CNP_gam_cesm$pred_cp_SSP370_full
+  cp_SSP370_plot <- reshape2::melt(pred_cp_SSP370_full)
+  cp_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+  cp_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+  pal = turbo(20)
+  fig_232 <- ggplot(data = cp_SSP370_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+    geom_raster(aes(fill = value)) +
+    scale_fill_gradientn(colors = pal,
+                              na.value = "gray30",
+                              limits = c(50, 230),
+                              breaks = c(75, 100, 120, 140, 160,180,200,220),oob=squish) +
+    ggtitle("(B) C:P (2090s)") +
+    theme_bw(base_size = 18, base_family = "Helvetica") +
+    theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+    theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "", title.position = "top",show.limits = TRUE))
+  
+  # Top Left (2,3,3) = Delta C:P of model GS (full) = Same as Main Fig. 3
+  delcp_full <- pred_cp_SSP370_full - pred_cp_historic_full
+  delcp_full_plot <- reshape2::melt(delcp_full)
+  delcp_full_plot$lon <- as.vector(lonlat_grid_lon)
+  delcp_full_plot$lat <- as.vector(lonlat_grid_lat)
+  
+  fig_233<- ggplot(data = delcp_full_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+    scale_fill_cmocean(name = "balance", na.value = "black",breaks = seq(-25,25,5),limits=c(-30, 30),discrete = FALSE) + 
+    ggtitle("(C) DC:P (2090s - 2010s)") + 
+    theme_bw(base_size = 18, base_family = "Helvetica") +
+    theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+    theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    guides(fill = guide_colorbar(barwidth = 0.75, barheight = 14, title = "", title.position = "top"))
+  
+  # Bottom Left (2,3,4) = N:P Historic (full)
+  pred_np_historic_full <- CNP_gam_cesm$pred_np_historic_full
+  np_historic_plot <- reshape2::melt(pred_np_historic_full)
+  np_historic_plot$lon <- as.vector(lonlat_grid_lon)
+  np_historic_plot$lat <- as.vector(lonlat_grid_lat)
+  pal = turbo(20)
+  fig_234 <- ggplot(data = np_historic_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+    geom_raster(aes(fill = value)) +
+    scale_fill_gradientn(colors = pal,
+                              na.value = "gray30",
+                              limits = c(10, 36),
+                              breaks = c(12, 14, 16,18,20,22,24,28,32),oob=squish) +
+
+    geom_point(pch =21, data = POM_all_binned, aes(x = Longitude, y = Latitude, fill = exp(logNP)), size =2.0,show.legend = F, color = "transparent") +
+    ggtitle("(D) N:P (2010s)") +
+    theme_bw(base_size = 18, base_family = "Helvetica") +
+    theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+    theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "", title.position = "top",show.limits = F))
+  
+  # Bottom Middle (2,3,5) = N:P SSP370 (full)
+  pred_np_SSP370_full <- CNP_gam_cesm$pred_np_SSP370_full
+  np_SSP370_plot <- reshape2::melt(pred_np_SSP370_full)
+  np_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+  np_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+  pal = turbo(20)
+  fig_235 <- ggplot(data = np_SSP370_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+    geom_raster(aes(fill = value)) +
+    scale_fill_gradientn(colors = pal,
+                              na.value = "gray30",
+                              limits = c(10, 36),
+                              breaks = c(12, 14, 16,18,20,22,24,28,32),oob=squish) +
+    ggtitle("(E) N:P (2090s)") +
+    theme_bw(base_size = 18, base_family = "Helvetica") +
+    theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+    theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "", title.position = "top",show.limits = F))
+  
+  # Bottom Right (2,3,6) = Delta N:P of model GS (full) 
+  delnp_full <- pred_np_SSP370_full - pred_np_historic_full
+  delnp_full_plot <- reshape2::melt(delnp_full)
+  delnp_full_plot$lon <- as.vector(lonlat_grid_lon)
+  delnp_full_plot$lat <- as.vector(lonlat_grid_lat)
+  
+  fig_236 <- ggplot(data = delnp_full_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+    scale_fill_cmocean(name = "balance", na.value = "black",breaks = seq(-5,5,1),limits=c(-6, 6),discrete = FALSE) + 
+    ggtitle("(F) DN:P (2090s - 2010s)") + 
+    theme_bw(base_size = 18, base_family = "Helvetica") +
+    theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+    theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    guides(fill = guide_colorbar(barwidth = 0.75, barheight = 14, title = "", title.position = "top"))
+  
+  
+  # Convert the figures to grobs
+  fig_231_grob <- ggplotGrob(fig_231)
+  fig_232_grob <- ggplotGrob(fig_232)
+  fig_233_grob <- ggplotGrob(fig_233)
+  fig_234_grob <- ggplotGrob(fig_234)
+  fig_235_grob <- ggplotGrob(fig_235)
+  fig_236_grob <- ggplotGrob(fig_236)
+  gg <- ggplot() +
+    coord_equal(xlim = c(1, 17.5), ylim = c(1, 11), expand = F) +
+    annotation_custom(fig_231_grob,
+                      xmin = 1, xmax = 6.5, ymin = 11, ymax = 6) +  
+    annotation_custom(fig_232_grob,
+                      xmin = 6.5, xmax = 12, ymin = 11, ymax = 6) +  
+      annotation_custom(fig_233_grob,
+                      xmin = 12, xmax = 17.5, ymin = 11, ymax = 6) + 
+    annotation_custom(fig_234_grob,
+                      xmin = 1, xmax = 6.5, ymin = 6, ymax = 1) +  
+    annotation_custom(fig_235_grob,
+                      xmin = 6.5, xmax = 12, ymin = 6, ymax = 1) +  
+    annotation_custom(fig_236_grob,
+                      xmin = 12, xmax = 17.5, ymin = 6, ymax = 1) + 
+    theme(panel.border = element_blank())
+  
+  ggsave(dest,
+        width = 18, # The width of the plot in inches
+        height = 10)  
+}
+
+# Function to plot DelCNP and broken down into different driver's effect (for N:P, turn NP = TRUE)
+make_fig_delcnp_driver <- function(dest,
+                                   fig_out_folder,
+                                   cesm_lonlat_info,
+                                   CNP_gam_cesm,
+                                   maintitle,
+                                   colbarbreak,
+                                   colbarlimits,
+                                   NP = FALSE) {
+  lonlat_grid <- cesm_lonlat_info$lonlat_grid
+  lonlat_grid_lon <- cesm_lonlat_info$lonlat_grid_lon
+  lonlat_grid_lat <- cesm_lonlat_info$lonlat_grid_lat
+  
+  pred_cp_SSP370_Tonly <- CNP_gam_cesm$pred_cp_SSP370_Tonly
+  pred_cp_historic_full <- CNP_gam_cesm$pred_cp_historic_full
+  pred_cp_SSP370_Nonly <- CNP_gam_cesm$pred_cp_SSP370_Nonly
+  pred_cp_SSP370_Nutclineonly <- CNP_gam_cesm$pred_cp_SSP370_Nutclineonly
+  pred_cp_SSP370_Nutlimonly <- CNP_gam_cesm$pred_cp_SSP370_Nutlimonly
+  pred_cp_SSP370_full <- CNP_gam_cesm$pred_cp_SSP370_full
+  
+  if (NP){
+      pred_cp_SSP370_Tonly <- CNP_gam_cesm$pred_np_SSP370_Tonly
+      pred_cp_historic_full <- CNP_gam_cesm$pred_np_historic_full
+      pred_cp_SSP370_Nonly <- CNP_gam_cesm$pred_np_SSP370_Nonly
+      pred_cp_SSP370_Nutclineonly <- CNP_gam_cesm$pred_np_SSP370_Nutclineonly
+      pred_cp_SSP370_Nutlimonly <- CNP_gam_cesm$pred_np_SSP370_Nutlimonly
+      pred_cp_SSP370_full <- CNP_gam_cesm$pred_np_SSP370_full
+  }
+  
+  # Fig (5,1,1) = T effect
+  delcp_plot <- reshape2::melt(pred_cp_SSP370_Tonly - pred_cp_historic_full)
+  delcp_plot$lon <- as.vector(lonlat_grid_lon)
+  delcp_plot$lat <- as.vector(lonlat_grid_lat)
+  fig_511 <- ggplot(data = delcp_plot, aes(x = lon, y = lat)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+    xlab("") +
+    ylab("") + 
+    geom_raster(aes(fill = value)) +
+    scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                       breaks = colbarbreak,
+                       limits = colbarlimits,discrete = FALSE,
+                       oob=squish) +
+    ggtitle("(A) Temperature") +
+    theme_bw(base_size = 18, base_family = "Helvetica") +
+    theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+    theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+    guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+  
+  # Fig (5,1,2) = NO3 effect
+  delcp_plot <- reshape2::melt(pred_cp_SSP370_Nonly - pred_cp_historic_full)
+  delcp_plot$lon <- as.vector(lonlat_grid_lon)
+  delcp_plot$lat <- as.vector(lonlat_grid_lat)
+  fig_512 <- ggplot(data = delcp_plot, aes(x = lon, y = lat)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+    xlab("") +
+    ylab("") + 
+    geom_raster(aes(fill = value)) +
+    scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                       breaks = colbarbreak,
+                       limits =colbarlimits,discrete = FALSE,
+                       oob=squish) +
+    ggtitle("(B) Nitrate") +
+    theme_bw(base_size = 18, base_family = "Helvetica") +
+    theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+    theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+    guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+  
+  # Fig (5,1,3) = Nutricline effect
+  delcp_plot <- reshape2::melt(pred_cp_SSP370_Nutclineonly - pred_cp_historic_full)
+  delcp_plot$lon <- as.vector(lonlat_grid_lon)
+  delcp_plot$lat <- as.vector(lonlat_grid_lat)
+  fig_513 <- ggplot(data = delcp_plot, aes(x = lon, y = lat)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+    xlab("") +
+    ylab("") + 
+    geom_raster(aes(fill = value)) +
+    scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                       breaks = colbarbreak,
+                      limits = colbarlimits,discrete = FALSE,
+                      oob=squish) +
+    ggtitle("(C) Nutricline") +
+    theme_bw(base_size = 18, base_family = "Helvetica") +
+    theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+    theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+    guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))  
+  
+  # Fig (5,1,4) = Nutricline x Nutlim effect
+  delcp_plot <- reshape2::melt(pred_cp_SSP370_Nutlimonly - pred_cp_historic_full)
+  delcp_plot$lon <- as.vector(lonlat_grid_lon)
+  delcp_plot$lat <- as.vector(lonlat_grid_lat)
+  fig_514 <- ggplot(data = delcp_plot, aes(x = lon, y = lat)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+    xlab("") +
+    ylab("") + 
+    geom_raster(aes(fill = value)) +
+    scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                       breaks = colbarbreak,
+                       limits = colbarlimits,discrete = FALSE,
+                       oob=squish) +
+    ggtitle("(D) Nutricline x Nutlim") +
+    theme_bw(base_size = 18, base_family = "Helvetica") +
+    theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+    theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+    guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+  
+  # Fig (5,1,5) = All effects
+  delcp_plot <- reshape2::melt(pred_cp_SSP370_full - pred_cp_historic_full)
+  delcp_plot$lon <- as.vector(lonlat_grid_lon)
+  delcp_plot$lat <- as.vector(lonlat_grid_lat)
+  fig_515 <- ggplot(data = delcp_plot, aes(x = lon, y = lat)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+    xlab("") +
+    ylab("") + 
+    geom_raster(aes(fill = value)) +
+    scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                       breaks = colbarbreak,
+                       limits = colbarlimits,discrete = FALSE,
+                       oob=squish) +
+    ggtitle("(E) All effects") +
+    theme_bw(base_size = 18, base_family = "Helvetica") +
+    theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+    theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+    guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))  
+  
+  # Save all in one figure using grob
+  fig_511_grob <- ggplotGrob(fig_511)
+  fig_512_grob <- ggplotGrob(fig_512)
+  fig_513_grob <- ggplotGrob(fig_513)
+  fig_514_grob <- ggplotGrob(fig_514)
+  fig_515_grob <- ggplotGrob(fig_515)
+  gg <- ggplot() +
+    coord_equal(xlim = c(1, 17), ylim = c(1, 8), expand = F) +
+    annotation_custom(fig_511_grob,
+                      xmin = 1, xmax = 5, ymin = 4.5, ymax = 8) +  
+    annotation_custom(fig_512_grob,
+                      xmin = 5, xmax = 9, ymin = 4.5, ymax = 8) +  
+    annotation_custom(fig_513_grob,
+                      xmin = 9, xmax = 13, ymin = 4.5, ymax = 8) + 
+    annotation_custom(fig_514_grob,
+                      xmin = 13, xmax = 17, ymin = 4.5, ymax = 8) +  
+    annotation_custom(fig_515_grob,
+                      xmin = 1, xmax = 5, ymin = 1, ymax = 4.5) +  
+    theme(panel.border = element_blank()) +
+    ggtitle(maintitle)
+  
+  ggsave(dest,
+       width = 17, # The width of the plot in inches
+       height = 8)
+  
 }
 
 ###############
