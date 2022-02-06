@@ -15,6 +15,13 @@ insertRow <- function(existingDF, newrow, r) {
   existingDF
 }
 
+# Function to replace NA with factor value
+replace_factor_na <- function(x, factorname){
+  x <- as.character(x)
+  x <- if_else(is.na(x), factorname, x)
+  x <- as.factor(x)
+}
+
 # Function to calculate 95% confidence interval for weighted mean Following Eqn 6 of Hedges et al. 1999, Ecology
 weighted.ttest.ci <- function(x, weights, conf.level = 0.95) {
     require(Hmisc)
@@ -118,7 +125,7 @@ clean_data_for_gam <- function(data) {
                                          sp_Nutlim_CESM2,
                                          absLatitude,
 					 contains("Nutlim")
-                                          ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% tidyr::drop_na(SST, MLPAR, logNO3_fill, logPO4_fill, Nstar_200_GLODAP, Nutcline_GLODAP_1um) 
+                                          ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% tidyr::drop_na(SST, logNO3_fill,  Nutcline_GLODAP_1um) 
 
   if("Nutlim" %in% colnames(data_for_gam))
     {
@@ -632,4 +639,12 @@ calc_diff_cnp_PosCount_grid <- function(mod_CNP, m, n, cesm_var_array_for_gam) {
   return(diffcnp_full_PosCount_grid)
 }
 
+# Function to calculate regional means from CNP with CESM2-lens GAM
+cnp_regional <- function(cnp_data, region_grid, area_weights){
+  data_vec <- reshape2::melt(cnp_data)
+  data_vec$regions <- as.vector(region_grid)
+  data_vec$area_weights <- as.vector(area_weights)
+  data_vec_regional <- data_vec %>% group_by(regions) %>%
+  summarise(mean = exp(weighted.mean(log(value), area_weights, na.rm = TRUE)))
+}
 

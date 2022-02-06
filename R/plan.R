@@ -9,7 +9,8 @@ plan  <-  drake::drake_plan(
                                                                      POM_genomes_selected_binned),
   POM_all_gam = clean_data_for_gam(POM_all), 
   POM_genomes_selected_gam = clean_data_for_gam(POM_genomes_selected),
-  POM_genomes_selected_gam_w_highlat = combine_data_global_gam(POM_all_gam,POM_genomes_selected_gam),
+  POM_genomes_selected_gam_w_highlat = combine_data_global_gam(POM_all_gam,
+							       POM_genomes_selected_gam),
   POM_highlat_gam = POM_all_gam %>% sep_data_highlat(latitude = 45),
   POM_lowlat_gam = POM_genomes_selected_gam %>% sep_data_lowlat(latitude = 45),
   scaled.POM_highlat_corr = clean_data_for_corr(sep_data_highlat(POM_all, latitude = 45)),
@@ -22,8 +23,10 @@ plan  <-  drake::drake_plan(
                                         nutcline_correction = 1.54),
   nutcline_SSP370 = read_nutcline_cesm(cesm_filepath, 'Nutcline_regrid_SSP370.nc',
                                       nutcline_correction = 1.54),
-  nitrate_surf_historic = read_nitrate_cesm(cesm_filepath, 'NO3_regrid_historic.nc', threshold = 0.1),
-  nitrate_surf_SSP370 = read_nitrate_cesm(cesm_filepath, 'NO3_regrid_SSP370.nc', threshold = 0.1),
+  nitrate_surf_historic = read_nitrate_cesm(cesm_filepath, 'NO3_regrid_historic.nc', 
+					    threshold = 0.1),
+  nitrate_surf_SSP370 = read_nitrate_cesm(cesm_filepath, 'NO3_regrid_SSP370.nc', 
+					  threshold = 0.1),
   nutlim_historic = read_nutlim_cesm(cesm_filepath,
                                     'sp_Nut_lim_surf_historic.nc',
                                     varid = "sp_Nut_lim_surf_historic"),
@@ -32,18 +35,20 @@ plan  <-  drake::drake_plan(
                                     varid = "sp_Nut_lim_surf_SSP370"),
   cesm_lonlat_info =  get_cesm_lonlat(cesm_filepath,'TEMP_regrid_historic.nc'),
   cesm_var_array_for_gam = make_cesm_var_array_for_gam(sst_surf_historic,
-                                        sst_surf_SSP370,
-                                        nitrate_surf_historic,
-                                        nitrate_surf_SSP370,
-                                        nutcline_historic,
-                                        nutcline_SSP370,
-                                        nutlim_historic,
-                                        nutlim_SSP370),
+						       sst_surf_SSP370,
+                                                       nitrate_surf_historic,
+                                                       nitrate_surf_SSP370,
+                                                       nutcline_historic,
+                                                       nutcline_SSP370,
+                                                       nutlim_historic,
+                                                       nutlim_SSP370),
   # Analyses ---------------------------------------------
   CNP_global_mean = calc_cnp_global_mean(tibble(POM_all)),
   CNP_global_mean_binned = calc_cnp_global_mean(tibble(POM_all_binned)),
-  M.POM_highlat_corr_selected = M.POM_corr(scaled.POM_highlat_corr,highlat = TRUE, colnames = TRUE),
-  M.POM_lowlat_corr_selected = M.POM_corr(scaled.POM_lowlat_corr,highlat = FALSE, colnames = TRUE),
+  M.POM_highlat_corr_selected = M.POM_corr(scaled.POM_highlat_corr,highlat = TRUE, 
+					   colnames = TRUE),
+  M.POM_lowlat_corr_selected = M.POM_corr(scaled.POM_lowlat_corr,highlat = FALSE, 
+					  colnames = TRUE),
   testRes_selected_highlat = testRes.POM_corr(scaled.POM_highlat_corr,highlat = TRUE),
   testRes_selected_lowlat = testRes.POM_corr(scaled.POM_lowlat_corr, highlat = FALSE),
   CNP_highlat_gam_devexpl = make_CNP_devexpl_highlat(POM_highlat_gam),
@@ -52,17 +57,23 @@ plan  <-  drake::drake_plan(
   CNP_lowlat_gam_pval = make_CNP_pval_lowlat(POM_lowlat_gam),
   mod_CNP_no_Nutlim = make_mod_CNP_no_Nutlim(POM_genomes_selected_gam_w_highlat),
   mod_CNP_Nutcline_Nutlim_modGS = make_mod_CNP_Nutcline_Nutlim_modGS(POM_genomes_selected_gam_w_highlat),
-  load("test/GAM_Model/modGS_CP.rda"),            # temporary GAM- check
-  load("test/GAM_Model/modGS_NP.rda"),            # temporary 
-  CNP_gam_cesm = predict_cnp_gam_cesm(modGS_CP, modGS_NP, cesm_var_array_for_gam),
+  mod_CNP_Nutcline_Nutlim_modGS_for_gam_cesm = make_mod_CNP_Nutcline_Nutlim_modGS(POM_genomes_selected_gam_w_highlat %>% 
+										  mutate_at(c("Nutlim"), 
+											    replace_factor_na, 
+											    factorname = "Fe-lim")),
+  modGS_CP = mod_CNP_Nutcline_Nutlim_modGS_for_gam_cesm$mod_CP_Nutcline_Nutlim_modGS,
+  modGS_NP = mod_CNP_Nutcline_Nutlim_modGS_for_gam_cesm$mod_NP_Nutcline_Nutlim_modGS,
+  CNP_gam_cesm = predict_cnp_gam_cesm(modGS_CP, 
+				      modGS_NP, 
+				      cesm_var_array_for_gam),
   diffcp_full_PosCount_grid = calc_diff_cnp_PosCount_grid(modGS_CP,
-                                                               m = 1000,
-                                                               n = 2000,
-                                                               cesm_var_array_for_gam),
+							  m = 1000,
+                                                          n = 2000,
+                                                          cesm_var_array_for_gam),
   diffnp_full_PosCount_grid = calc_diff_cnp_PosCount_grid(modGS_NP, 
-                                                               m = 1000,
-                                                               n = 2000,
-                                                               cesm_var_array_for_gam),
+                                                          m = 1000,
+                                                          n = 2000,
+                                                          cesm_var_array_for_gam),
   # Figures ----------------------------------------------
   fig_out_folder = dir.create("output/figures/",
                               recursive = TRUE,
@@ -189,10 +200,14 @@ plan  <-  drake::drake_plan(
 			   digits = 3,
 			   rownames = TRUE,
 			 tab_out_folder,  "sp_table_8.csv")
+  },
+  sp_table_9 = {
+	  make_cnp_gam_cesm_summary_table(cesm_lonlat_info, 
+                                     CNP_gam_cesm,
+                                     rownames = FALSE,
+                                     tab_out_folder,
+                                     "sp_table_9.csv")
   }
-
-
-
 
 
 )

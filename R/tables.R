@@ -111,3 +111,54 @@ make_devexpl_pval_table <- function(odd_data, even_data, digits = 3, ...) {
   rownames(newtable) <- paste(c("C:P", "N:P", "C:N"))
   newtable %>% export_csv(...)
 }
+
+# Function to make area-weighted regional mean table from CESM-GAM outputs
+make_cnp_gam_cesm_summary_table <- function(cesm_lonlat_info, CNP_gam_cesm, ...) {
+  region <- c("Polar", "Subpolar", "Subtropical","Tropical")
+  area_weights <- cesm_lonlat_info$area_weights
+  lonlat_regions <- cesm_lonlat_info$lonlat_regions
+  lonlat_large_regions <- cesm_lonlat_info$lonlat_large_regions
+  pred_cp_historic_full <- CNP_gam_cesm$pred_cp_historic_full
+  pred_np_historic_full <- CNP_gam_cesm$pred_np_historic_full
+  pred_cp_SSP370_full <- CNP_gam_cesm$pred_cp_SSP370_full
+  pred_np_SSP370_full <- CNP_gam_cesm$pred_np_SSP370_full
+  
+  # Global
+  cp_global_historic <- weighted.mean(log(pred_cp_historic_full), area_weights, na.rm = TRUE)
+  np_global_historic <- weighted.mean(log(pred_np_historic_full), area_weights, na.rm = TRUE)
+  cp_global_SSP370 <- weighted.mean(log(pred_cp_SSP370_full), area_weights, na.rm = TRUE)
+  np_global_SSP370 <- weighted.mean(log(pred_np_SSP370_full), area_weights, na.rm = TRUE)
+
+  # Regional
+  # C:P
+  cp_historic_full_vec_regional <- cnp_regional(pred_cp_historic_full, lonlat_regions, area_weights) 
+  cp_historic_full_vec_largeregional <- cnp_regional(pred_cp_historic_full, lonlat_large_regions, area_weights)
+  cp_SSP370_full_vec_regional <- cnp_regional(pred_cp_SSP370_full, lonlat_regions, area_weights) 
+  cp_SSP370_full_vec_largeregional <- cnp_regional(pred_cp_SSP370_full, lonlat_large_regions, area_weights)
+  # N:P
+  np_historic_full_vec_regional <- cnp_regional(pred_np_historic_full, lonlat_regions, area_weights) 
+  np_historic_full_vec_largeregional <- cnp_regional(pred_np_historic_full, lonlat_large_regions, area_weights)
+  np_SSP370_full_vec_regional <- cnp_regional(pred_np_SSP370_full, lonlat_regions, area_weights) 
+  np_SSP370_full_vec_largeregional <- cnp_regional(pred_np_SSP370_full, lonlat_large_regions, area_weights)
+
+  # Summarize in a table
+  regions <- c(region,"High latitude (|Lat| >= 45)", "Low latitude (|Lat| < 45)", "Global")
+
+  cp_hist <- c(cp_historic_full_vec_regional$mean, cp_historic_full_vec_largeregional$mean, exp(cp_global_historic))
+  cp_SSP370 <- c(cp_SSP370_full_vec_regional$mean, cp_SSP370_full_vec_largeregional$mean, exp(cp_global_SSP370))
+  np_hist <- c(np_historic_full_vec_regional$mean, np_historic_full_vec_largeregional$mean, exp(np_global_historic))
+  np_SSP370 <- c(np_SSP370_full_vec_regional$mean, np_SSP370_full_vec_largeregional$mean, exp(np_global_SSP370))
+  summary_cesm_pred_regional <- data.frame(regions, 
+                                           cp_hist, 
+                                           cp_SSP370, 
+                                           np_hist,
+                                          np_SSP370)
+  colnames(summary_cesm_pred_regional) <- c('Region',
+                                            'C:P Historical (2010s)',
+                                            'C:P SSP370 (2090s)',
+                                            'N:P Historical (2010s)',
+                                            'N:P SSP 370 (2090s)')
+  summary_cesm_pred_regional %>% mutate_if(is.numeric, round, digits = 1) %>% export_csv(...)
+}
+
+
