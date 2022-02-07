@@ -1148,6 +1148,97 @@ make_fig_delcnp_driver <- function(dest,
   
 }
 
+# Function to plot C:P under different nutrient limitation under varying Nutricline for a given model and prediction data with observation
+plot_CP_pred_Nutcline_nutlim <- function(mod_CP_pred, data, model_name) {
+  data <- data %>% drop_na(Nutlim)
+  {ggplot(data, aes(x=Nutcline_GLODAP_1um, y=exp(logCP), group=Nutlim)) +
+  facet_wrap(~Nutlim, drop = T) +
+  geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_GLODAP_1um),
+              data=mod_CP_pred, 
+              alpha=0.3, 
+              inherit.aes=FALSE) +
+  xlim(0,210) + 
+  ylim(60, 255) +   
+  coord_cartesian(xlim = c(0,210), ylim = c(60, 255)) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
+                   labels = c(75, 100, 125, 150, 175, 200, 225)) +       
+  geom_jitter(aes(color = Nutlim), size = 0.8) +
+  geom_line(aes(y=exp(fit)), data=mod_CP_pred) +
+  ggtitle(model_name) + 
+  labs(x = 'Nutricline (m)', y = 'C:P')} + 
+  theme_bw() + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + theme(legend.position = "none")
+}
+
+# Function to plot N:P under different nutrient limitation under varying Nutricline for a given model and prediction data with observation
+plot_NP_pred_Nutcline_nutlim <- function(mod_NP_pred, data, model_name) {
+  data <- data %>% drop_na(Nutlim)
+  {ggplot(data, aes(x=Nutcline_GLODAP_1um, y=exp(logNP), group=Nutlim)) +
+  facet_wrap(~Nutlim) +
+  geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_GLODAP_1um),
+              data=mod_NP_pred, 
+              alpha=0.3, 
+              inherit.aes=FALSE) +
+  xlim(0,210) + 
+  ylim(10, 36) +
+  coord_cartesian(xlim = c(0,210), ylim = c(10, 36)) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  scale_y_continuous(breaks = c(12, 16, 20, 24, 28,32),
+                   labels = c(12, 16, 20, 24, 28,32)) +      
+  geom_jitter(aes(color = Nutlim), size = 0.8) +
+  geom_line(aes(y=exp(fit)), data=mod_NP_pred) +
+  ggtitle(model_name) + 
+  labs(x = 'Nutricline (m)', y = 'N:P')} + 
+  theme_bw() + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + theme(legend.position = "none")
+}
+
+# Function to plot C:N under different nutrient limitation under varying Nutricline for a given model and prediction data with observation
+plot_CN_pred_Nutcline_nutlim <- function(mod_CN_pred, data, model_name) {
+  data <- data %>% drop_na(Nutlim)
+  {ggplot(data, aes(x=Nutcline_GLODAP_1um, y=exp(logCN), group=Nutlim)) +
+  facet_wrap(~Nutlim) +
+  geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_GLODAP_1um),
+              data=mod_CN_pred, 
+              alpha=0.3, 
+              inherit.aes=FALSE) +
+  xlim(0,210) + 
+  ylim(5, 9) +
+  coord_cartesian(xlim = c(0,210), ylim = c(5, 9)) + 
+  geom_jitter(aes(color = Nutlim), size = 0.8) +
+  geom_line(aes(y=exp(fit)), data=mod_CN_pred) +
+  ggtitle(model_name) + 
+  labs(x = 'Nutricline (m)', y = 'C:N')} + 
+  theme_bw() + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + theme(legend.position = "none")
+}
+
+# Function make Nutrient vs CNP for different nutrient limitation types
+make_plot_CNP_pred_Nutcline_nutlim <- function(dest,
+                                               fig_out_folder,
+                                               data, mod_CNP, stoich) {
+  # Reorder factor level in nutrient limitation so P-limiation is plotted last.
+  data$Nutlim <- factor(data$Nutlim, levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+  mod_CNP_pred <- with(data,
+                      expand.grid(Nutcline_GLODAP_1um =seq(min(0), max(300), length=300),
+                                  SST= mean(data$SST),
+                                  logNO3_fill = mean(data$logNO3_fill),
+                                  Nutlim=levels(Nutlim)))
+                                  # SST= 18))
+  mod_CNP_pred <- pred_CNP_Nutcline_nutlim(mod_CNP,mod_CNP_pred)
+  if (stoich == "CP") {
+    plot_CP_pred_Nutcline_nutlim(mod_CNP_pred, data, stoich)
+  } else if (stoich == "NP") {
+    plot_NP_pred_Nutcline_nutlim(mod_CNP_pred, data, stoich)
+  } else if (stoich == "CN") {
+    plot_CN_pred_Nutcline_nutlim(mod_CNP_pred, data, stoich)
+    }
+  ggsave(dest,
+        width = 8, # The width of the plot in inches
+        height = 5)
+}
+
 ###############
 # SUPPLEMENTARY INFO FIGURES
 ###############

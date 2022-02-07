@@ -417,6 +417,16 @@ make_mod_CNP_Nutcline_Nutlim_modGS <- function(data_all) {
   return(mod_CNP_Nutcline_Nutlim_modGS)
 }
 
+# Function to predict CNP under different nutrient limitation under varying SST for a given model and prediction data
+pred_CNP_Nutcline_nutlim <- function(model,pred_data) {
+  mod_CNP_pred <- pred_data
+  mod_CNP_pred <- cbind(mod_CNP_pred,
+                       predict(model, 
+                               mod_CNP_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+}
+
 # Function to make Nutricline x Nutlim based gam prediction of CNP (Nitrate and SST kept constant)
 make_mod_CNP_Nutcline_Nutlim_pred <- function(data_all, mod_CNP_Nutcline_Nutlim_modGS) {
   mod_CNP_Nutcline_Nutlim_pred <- with(data_all,
@@ -424,11 +434,12 @@ make_mod_CNP_Nutcline_Nutlim_pred <- function(data_all, mod_CNP_Nutcline_Nutlim_
                                   SST= mean(data_all$SST),
                                   logNO3_fill = mean(data_all$logNO3_fill),
                                   Nutlim=levels(Nutlim)))
-  mod_CNP_Nutcline_Nutlim_pred <- cbind(mod_CNP_Nutcline_Nutlim_pred,
-                       predict(mod_CNP_Nutcline_Nutlim_modGS, 
-                               mod_CNP_Nutcline_Nutlim_pred, 
-                               se.fit=TRUE, 
-                               type="response"))
+  # mod_CNP_Nutcline_Nutlim_pred <- cbind(mod_CNP_Nutcline_Nutlim_pred,
+  #                     predict(mod_CNP_Nutcline_Nutlim_modGS, 
+  #                             mod_CNP_Nutcline_Nutlim_pred, 
+  #                             se.fit=TRUE, 
+  #                             type="response"))
+  mod_CNP_Nutcline_Nutlim_pred <- pred_CNP_Nutcline_nutlim(mod_CNP_Nutcline_Nutlim_modGS, mod_CNP_Nutcline_Nutlim_pred)
   mod_CNP_Nutcline_Nutlim_pred  
 }
 
