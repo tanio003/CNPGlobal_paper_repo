@@ -10,11 +10,9 @@ This repository contains code and data needed to reproduce the article:
 
 **Tanioka, T. Garcia, C. A., Larkin., Garcia, N. S., Fagan, A. J., Martiny A. C.** (*submitted*) Global patterns and drivers of C:N:P in marine ecosystems.
 
-<!---
 **When using the data or code from this project, please cite it as:**
 
-**Tanioka, T. Garcia, C. A., Larkin., Garcia, N. S., Fagan, A. J., Martiny A. C.** Initial Submission of paper data and code of manuscript: Global patterns and drivers of C:N:P in marine ecosystems. *Zenodo*. DOI: 
--->
+Tanioka, T. Garcia, C. A., Larkin., Garcia, N. S., Fagan, A. J., Martiny A. C (2022). Initial Submission of Tanioka et al. (2022) (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.6015417
 
 ## Instructions
 
@@ -47,7 +45,7 @@ source("make.R")
 drake::loadd()
 ```
 
-This whole process should be completed in less than 5 minutes. ODV Figures 1a-c are located in the separate `pics` folder. Note that figures created here are subsequently cleaned using Adobe Illustrator.
+This whole process should be completed in less than 5 minutes. ODV Figures 1a-c are located in the separate `pics` folder. Note that figures created here were subsequently cleaned using Adobe Illustrator for the manuscript.
 
 ### This paper was produced using the following software and associated packages:
 ```
