@@ -659,3 +659,44 @@ cnp_regional <- function(cnp_data, region_grid, area_weights){
   summarise(mean = exp(weighted.mean(log(value), area_weights, na.rm = TRUE)))
 }
 
+####################################################
+# FUNCTIONS RELATED TO ANALYSES of GLODAP OUTPUT
+####################################################
+# Function to read GLODAP Nutricline
+read_nutcline_glodap <- function(glodap_filepath, filename) {
+  nutcline_glodap<- nc_open(file.path(glodap_filepath, paste(filename,  sep="")))
+  nutcline <- ncvar_get(nutcline_glodap, varid = "Nutcline")
+  return(nutcline)
+}
+
+# Function to read SST GLODAP
+read_sst_glodap <- function(glodap_filepath,
+                            filename,
+                            glodap_lonlat_surfdepth_info) {
+  surf_depth_index <- glodap_lonlat_surfdepth$surf_depth_index
+  sst_glodap <- nc_open(file.path(glodap_filepath, paste(filename,  sep="")))
+  sst_glodap_data <- ncvar_get(sst_glodap, varid = "TEMPERATURE_REGRID")
+  sst_glodap_surf_data <- apply(sst_glodap_data[,,1:surf_depth_index], c(1,2), mean, na.rm = TRUE)
+  return(sst_glodap_surf_data)
+}
+
+# Function to read GLODAP lon, lat, surf depth info
+get_glodap_lonlat_surfdepth <- function(glodap_filepath, 
+                                        filename_temp = 'GLODAPv2.2016b.temperature_regrid.nc',
+                                        filename_nutcline = 'GLODAPv2.2016b.nutcline_regrid.nc',
+                                        surfdepth = 30.0) {
+  temp_glodap <- nc_open(file.path(glodap_filepath, paste(filename_temp,  sep="")))
+  nutcline_glodap <- nc_open(file.path(glodap_filepath, paste(filename_nutcline,  sep="")))
+  lon <- ncvar_get(nutcline_glodap, varid = "lon")
+  lat <- ncvar_get(nutcline_glodap, varid = "lat") 
+  depth <- ncvar_get(temp_glodap, varid = "DEPTH")
+  surf_depth_index <- which.min(abs(depth - surfdepth))
+  
+  glodap_lonlat_surfdepth <<- list("lon"= lon, 
+                                   "lat" = lat, 
+                                   "surf_depth_index" = surf_depth_index
+                                   )
+  return(glodap_lonlat_surfdepth)
+}
+
+

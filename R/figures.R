@@ -491,6 +491,156 @@ make_fig_4 <- function(dest,
 ###############
 # EXTENDED DATA FIGURES
 ###############
+# Function to Make Extended Figure 1a
+plot_nutcline_glodap <- function(glodap_lonlat_surfdepth_info,
+                                 nutcline_glodap_data,
+                                 plot_title) {
+  par(mar=c(1.5, 1, 1.5, 1))
+  lonlim <- c(-180, 180)
+  latlim <- c(-90, 90)
+  Zlim = c(0,300)
+  
+  drawPalette(zlim = Zlim, 
+              col=oce.colorsJet, 
+              at = seq(0,300,20), 
+              pos = 4, 
+              drawTriangles = TRUE,
+              las = 1,
+              cex = 0.75)
+  
+  mapPlot(coastlineWorld, 
+        projection="+proj=robin",
+        col="black", 
+        longitudelim=lonlim, 
+        latitudelim=latlim, 
+        axes = TRUE,
+        drawBox = FALSE,
+        grid = FALSE,
+        clip = TRUE,
+        border = "black",
+        lonlabels = TRUE,
+        latlabels = TRUE,
+        geographical = 0,
+        axisStyle = 1)
+  
+  mapImage(glodap_lonlat_surfdepth_info$lon,
+           glodap_lonlat_surfdepth_info$lat,
+           nutcline_glodap_data,
+           zlim = Zlim, 
+           col = oceColorsJet(240))
+  
+  title(plot_title, outer=FALSE, cex=0.75) # title for overall plot  
+}
+
+# Function to Make Extended Figure 1c = Difference in nutricline depth (GLODAP - CESM)
+plot_nutcline_glodap_diff_cesm <- function(cesm_lonlat_info,
+                                           nutcline_glodap_data,
+                                           nutcline_cesm_data,
+                                           plot_title) {
+  par(mar=c(1.5, 1, 1.5, 1))
+  lonlim <- c(-180, 180)
+  latlim <- c(-90, 90)
+
+  Zlim = c(-160,160)
+  drawPalette(zlim = Zlim, 
+              col=cmocean('balance')(240), 
+              at = seq(-160,160,40), 
+              pos = 4, 
+              drawTriangles = TRUE,
+              las = 1,
+              cex = 0.75)
+
+  mapPlot(coastlineWorld, 
+        projection="+proj=robin",
+        col="black", 
+        longitudelim=lonlim, 
+        latitudelim=latlim, 
+        axes = TRUE,
+        drawBox = FALSE,
+        grid = FALSE,
+        clip = TRUE,
+        border = "black",
+        lonlabels = TRUE,
+        latlabels = TRUE,
+        geographical = 0,
+        axisStyle = 1)
+  
+  mapImage(cesm_lonlat_info$lon,
+           cesm_lonlat_info$lat,
+           nutcline_glodap_data - nutcline_cesm_data,
+           zlim = Zlim, 
+           col = cmocean('balance')(240))
+  
+  title(plot_title, outer=FALSE, cex=0.75) # title for overall plot
+} 
+
+# Function to Make Extended Figure 1d (Correlation between GLODAP Nutricline and CESM Nutricline)
+plot_corr_nutcline_glodap_cesm <- function(cesm_lonlat_info,
+                                           nutcline_glodap_data,
+                                           nutcline_historic,
+                                           plot_title) {
+  par(mar=c(4.0, 1, 4.0, 1))
+  lonlat_model_mask <- outer(rep(1,length(cesm_lonlat_info$lon)), ifelse(abs(cesm_lonlat_info$lat) < 55, 1, NA))
+  nutcline_gt0_mask <- ifelse(nutcline_historic > 0 & 
+                                   nutcline_glodap_data > 0, 
+                                 1, NA)
+  
+  par(pty="s")
+  smoothScatter(nutcline_historic*lonlat_model_mask*nutcline_gt0_mask,
+                nutcline_glodap_data*lonlat_model_mask*nutcline_gt0_mask, asp = 1,
+                xlim = c(0,300), ylim = c(0,300),
+                xlab = "Nutricline depth CESM (2010-2014) [m]",
+                ylab = "Nutricline depth GLODAP [m]",
+		cex.axis = 0.5,
+		cex.lab = 0.5
+                )
+  abline(a=0, b=1, lty = 2, cex = 1.5)
+  
+  # Plot log linear regression line that goes through origin
+  y <- as.vector(nutcline_glodap_data*lonlat_model_mask*nutcline_gt0_mask)
+  x <- as.vector(nutcline_historic*lonlat_model_mask*nutcline_gt0_mask)
+
+  abline(lm(y ~ x + 0), col = 4, lwd = 3)
+  Model<-lm(y~x + 0)
+  coef <- round(coef(lm(y ~ x + 0)), 2)
+  text(120, 300,  paste("GLODAP = ", coef[1], "CESM"),cex = 0.5, col = 4, font = 2)
+  text(120, 280,  paste("R2 = ", format(summary(Model)$r.squared,digits=3)), cex = 0.5)
+  text(290, 300, paste(plot_title), cex = 0.75, font = 2)
+}
+
+# Function to make Ed_Fig_1a
+make_ed_fig_1 <- function(dest,
+                          fig_out_folder,
+                          glodap_lonlat_surfdepth_info,
+                          cesm_lonlat_info,
+                          nutcline_glodap_data,
+                          nutcline_cesm_data,
+                          plot_title_1a,
+                          plot_title_1b,
+                          plot_title_1c,
+                          plot_title_1d) {
+  pdf(dest, width = 8, height = 5)
+  par(mfrow = c(2,2))
+  fig_a <- plot_nutcline_glodap(glodap_lonlat_surfdepth_info, 
+                                nutcline_glodap_data, 
+                                plot_title_1a)
+  fig_b <- plot_nutcline_glodap(cesm_lonlat_info,
+                                nutcline_historic_uncorrected,  
+                                plot_title_1b)
+  fig_c <- plot_nutcline_glodap_diff_cesm(cesm_lonlat_info,
+                                          nutcline_glodap_data,
+                                          nutcline_historic_uncorrected, 
+                                          plot_title_1c)
+  fig_d <- plot_corr_nutcline_glodap_cesm(cesm_lonlat_info, 
+                                          nutcline_glodap_data,
+                                          nutcline_historic_uncorrected,
+                                          plot_title_1d) 
+  fig_a
+  fig_b
+  fig_c
+  fig_d
+  dev.off()
+}
 
 # Function to Make ED_Fig. 2
 make_ed_fig_2 <- function(dest,
