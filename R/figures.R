@@ -391,7 +391,7 @@ make_fig_3 <- function(dest, fig_out_folder,
                        nrows = 3,
                        shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE, margin = 0.015,
                        heights = c(0.33, 0.34, 0.33)) %>% layout(height = 300, width = 450)
-  fig3
+  # fig3
   orca(fig3, dest)
   server <- orca_serve()
   server$close()

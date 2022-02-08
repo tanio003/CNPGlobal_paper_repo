@@ -501,7 +501,7 @@ get_cesm_lonlat <- function(cesm_filepath, filename = 'TEMP_regrid_historic.nc')
   lonlat_grid_lon <- outer(lon, rep(1, length(lat)))
   area_weights = cos(deg2rad(lonlat_grid_lat))
   
-  cesm_lonlat_data <<- list("lon"= lon, 
+  cesm_lonlat_data <- list("lon"= lon, 
                            "lat" = lat, 
                            "lat_mask" = lat_mask,
                            "lonlat_regions" = lonlat_regions,
@@ -669,17 +669,6 @@ read_nutcline_glodap <- function(glodap_filepath, filename) {
   return(nutcline)
 }
 
-# Function to read SST GLODAP
-read_sst_glodap <- function(glodap_filepath,
-                            filename,
-                            glodap_lonlat_surfdepth_info) {
-  surf_depth_index <- glodap_lonlat_surfdepth$surf_depth_index
-  sst_glodap <- nc_open(file.path(glodap_filepath, paste(filename,  sep="")))
-  sst_glodap_data <- ncvar_get(sst_glodap, varid = "TEMPERATURE_REGRID")
-  sst_glodap_surf_data <- apply(sst_glodap_data[,,1:surf_depth_index], c(1,2), mean, na.rm = TRUE)
-  return(sst_glodap_surf_data)
-}
-
 # Function to read GLODAP lon, lat, surf depth info
 get_glodap_lonlat_surfdepth <- function(glodap_filepath, 
                                         filename_temp = 'GLODAPv2.2016b.temperature_regrid.nc',
@@ -692,7 +681,7 @@ get_glodap_lonlat_surfdepth <- function(glodap_filepath,
   depth <- ncvar_get(temp_glodap, varid = "DEPTH")
   surf_depth_index <- which.min(abs(depth - surfdepth))
   
-  glodap_lonlat_surfdepth <<- list("lon"= lon, 
+  glodap_lonlat_surfdepth <- list("lon"= lon, 
                                    "lat" = lat, 
                                    "surf_depth_index" = surf_depth_index
                                    )
