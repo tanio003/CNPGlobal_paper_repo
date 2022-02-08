@@ -3,6 +3,7 @@
 output/
 test/
 Figures/
+Rda_files/
 
 .DS_Store
 *.Rapp.history
