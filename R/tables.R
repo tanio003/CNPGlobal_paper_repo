@@ -96,8 +96,8 @@ make_corr_pval_table <- function(M.POM_corr_selected, testRes_selected, ...) {
 # Function to Merge Deviance explained and p-value matrix by alternating columns and export to csv
 make_devexpl_pval_table <- function(odd_data, even_data, digits = 3, ...) {
   odd_data <- data.table(round(odd_data, digits))
-  odd_data <- transpose(odd_data)
-  even_data <- data.table(transpose(even_data))
+  odd_data <- data.table::transpose(odd_data)
+  even_data <- data.table(data.table::transpose(even_data))
   neworder <- order(c(2*(seq_along(odd_data) - 1) + 1,
                     2*seq_along(even_data)))
   newtable <- cbind(odd_data, even_data)[,..neworder]

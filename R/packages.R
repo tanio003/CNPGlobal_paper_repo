@@ -1,56 +1,31 @@
-library(drake)
-library(plyr)
-library(dplyr)
-library(readxl)
-library(writexl)
-library(naniar)
-library(tidyverse)
-library(data.table)
-library(multcomp)
-library(rstan)
-library(lubridate)
-library(R.matlab)
-library(rlist)
-library(proto)
-library(gplots)
-library(ggplot2)
-library(ggpubr)
-library(ggpmisc)
-library(viridis)
-library(modelr)
+library(drake) #
+library(plyr)  #
+library(dplyr) #
+library(naniar) # 
+library(tidyverse) 
+library(data.table) # 
+library(rstan) #
+library(ggplot2) #
+library(ggpubr) #
+library(viridis) # 
 library(hrbrthemes)
-library(corrplot)
-library(pheatmap)
-library(gtable)
-library(grid)
-library(pals)
-library(MASS)
-library(multcomp)
+library(corrplot) #
+library(pals) # 
+library(MASS) # 
+library(multcomp) #
 library(stringr)
-library(gamm4)
-library(tidyr)
-library(ggthemes)
-library(cowplot)
-library(kableExtra)
-library(docxtools)
-library(knitr)
+library(Matrix) 
+library(tidyr) # 
+library(plotly) #
+library(scales) #
+library(mosaic) #
+library(matrixStats) #
+library(mgcv) #
 library(gratia)
-library(latex2exp)
-library(tidymv)
-library(jtools)
-library(plotly)
-library(processx)
-library(scales)
-library(mosaic)
-library(boot)
-library(matrixStats)
-library(mgcv)
-library(mgcViz)
-library(RColorBrewer)
-library(ncdf4)
-library(ncdf4.helpers)
-library(oce)
-library(ocedata)
-library(cmocean)
+library(RColorBrewer) # 
+library(ncdf4) #
+library(oce) #
+library(ocedata) # 
+library(cmocean) #
 data("coastlineWorld")
 

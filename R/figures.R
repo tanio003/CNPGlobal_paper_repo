@@ -614,7 +614,7 @@ make_ed_fig_1 <- function(dest,
                           glodap_lonlat_surfdepth_info,
                           cesm_lonlat_info,
                           nutcline_glodap_data,
-                          nutcline_cesm_data,
+                          nutcline_historic_uncorrected,
                           plot_title_1a,
                           plot_title_1b,
                           plot_title_1c,
@@ -1394,21 +1394,21 @@ make_plot_CNP_pred_Nutcline_nutlim <- function(dest,
 ###############
 
 
-make_sp_fig_1 <- function(dest, fig_out_folder,POM_all) {
+# make_sp_fig_1 <- function(dest, fig_out_folder,POM_all) {
 	
-	figa2 <- cp_boxplot(POM_all)
-	figa2_ply <- ggplotly(figa2)
-	figb2 <- np_boxplot(POM_all)
-	figb2_ply <- ggplotly(figb2)
-	figc2 <- cn_boxplot(POM_all)
-	figc2_ply <- ggplotly(figc2)
+#	figa2 <- cp_boxplot(POM_all)
+#	figa2_ply <- ggplotly(figa2)
+#	figb2 <- np_boxplot(POM_all)
+#	figb2_ply <- ggplotly(figb2)
+#	figc2 <- cn_boxplot(POM_all)
+#	figc2_ply <- ggplotly(figc2)
 
-        sp_fig_1 <-plotly::subplot(figa2_ply,figb2_ply, figc2_ply, nrows = 1, widths = c(0.33,0.34,0.33), shareX = FALSE, shareY = TRUE, titleX = TRUE, titleY = TRUE, margin = 0.01) 
-        sp_fig_1
-	orca(sp_fig_1, dest)
-	server <- orca_serve()
-	server$close()
-
-}
+#        sp_fig_1 <-plotly::subplot(figa2_ply,figb2_ply, figc2_ply, nrows = 1, widths = c(0.33,0.34,0.33), shareX = FALSE, shareY = TRUE, titleX = TRUE, titleY = TRUE, margin = 0.01) 
+#        sp_fig_1
+#	orca(sp_fig_1, dest)
+#	server <- orca_serve()
+#	server$close()
+#
+#}
 
 

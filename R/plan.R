@@ -21,6 +21,8 @@ plan  <-  drake::drake_plan(
   sst_surf_SSP370 = read_sst_cesm(cesm_filepath, 'TEMP_regrid_SSP370.nc'),
   nutcline_historic = read_nutcline_cesm(cesm_filepath, 'Nutcline_regrid_historic.nc',
                                         nutcline_correction = 1.54),
+  nutcline_historic_uncorrected = read_nutcline_cesm(cesm_filepath, 'Nutcline_regrid_historic.nc',
+                                        nutcline_correction = 1.0),
   nutcline_SSP370 = read_nutcline_cesm(cesm_filepath, 'Nutcline_regrid_SSP370.nc',
                                       nutcline_correction = 1.54),
   nitrate_surf_historic = read_nitrate_cesm(cesm_filepath, 'NO3_regrid_historic.nc', 
@@ -125,7 +127,7 @@ plan  <-  drake::drake_plan(
                                glodap_lonlat_surfdepth_info,
                                cesm_lonlat_info,
                                nutcline_glodap_data,
-                               nutcline_cesm_data,
+                               nutcline_historic_uncorrected,
                                "(A) Nutricline (GLODAP)",
                                "(B) Nutricline (CESM, 2010s)",
                                "(C) DeltaNutricline (GLODAP - CESM)",
@@ -192,8 +194,6 @@ plan  <-  drake::drake_plan(
                                          colbarbreak = seq(-5,5,1),
                                          colbarlimits = c(-6,6),
                                          NP = TRUE),			    
-  sp_fig_1_pdf = make_sp_fig_1(file_out("output/figures/sp_fig_1.pdf"), fig_out_folder,POM_all),
-
   # Tables -----------------------------------------------
   tab_out_folder = {
     dir.create("output/tables/", recursive = TRUE, showWarnings = FALSE)
