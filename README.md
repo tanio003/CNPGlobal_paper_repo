@@ -44,7 +44,7 @@ source("make.R")
 drake::loadd()
 ```
 
-This whole process should be completed in less than 5 minutes. 
+This whole process should be completed in less than 5 minutes. ODV Figures 1a-c are located in the separate `pics` folder. Note that figures created here are subsequently cleaned using Adobe Illustrator.
 
 ### This paper was produced using the following software and associated packages:
 ```
