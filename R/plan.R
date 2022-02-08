@@ -99,7 +99,7 @@ plan  <-  drake::drake_plan(
                          testRes_selected_lowlat,
                          CNP_highlat_gam_devexpl,
                          CNP_lowlat_gam_devexpl),
-   fig_3_pdf = make_fig_3(file_out("output/figures/fig_3.pdf"), 
+  fig_3_pdf = make_fig_3(file_out("output/figures/fig_3.pdf"), 
 			 fig_out_folder,
                          mod_CNP_no_Nutlim$mod_CP,
                         mod_CNP_no_Nutlim$mod_NP,
