@@ -182,7 +182,7 @@ deviance4variables <- function(xvar1, xvar2, xvar3, xvar4, yvar, data) {
 
 #--------------------------------------------------------------
 # Function to calculate % deviance explained for 4 variable case:
-# 4th variable is nutrient limitation without interaction as a linear categorical variable
+# 4th variable is a linear categorical variable (e.g., Nutrient limitation type)
 #---------------------------------------------------------------
 
 deviance4variables_nutlim <- function(xvar1, xvar2, xvar3, xvar4, yvar, data) {
@@ -279,6 +279,8 @@ deviance4variables_nutlim <- function(xvar1, xvar2, xvar3, xvar4, yvar, data) {
 #---------------------------------------------------------------
 # Function to calculate % deviance explained for 4 variable case:
 # This is specifically for model GS and C:P with SST, NO3, Nutricline and nutrient limitation
+# For hierarchical GAM, refer to
+# Pedersen, E. J., Miller, D. L., Simpson, G. L., & Ross, N. (2019). Hierarchical generalized additive models in ecology: an introduction with mgcv. PeerJ, 7, e6876.
 #---------------------------------------------------------------
 deviance4variables_nutlim_modGS_CP <- function(data) {
   b1 <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
@@ -380,6 +382,7 @@ deviance4variables_nutlim_modGS_CP <- function(data) {
 # Function to calculate % deviance explained for 4 variable case:
 # 4th variable is nutrient limitation so the bs = "re" needs to be used
 # This is specifically for model GS and N:P with SST, NO3, Nutricline and nutrient limitation
+# This function is identical to deviance4variables_nutlim_modGS_CP but for N:P
 #---------------------------------------------------------------
 deviance4variables_nutlim_modGS_NP <- function(data) {
   b1 <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
@@ -481,6 +484,7 @@ deviance4variables_nutlim_modGS_NP <- function(data) {
 # Function to calculate % deviance explained for 4 variable case:
 # 4th variable is nutrient limitation so the bs = "re" needs to be used
 # This is specifically for model GS and C:N with SST, NO3, Nutricline and nutrient limitation
+# This function is identical to deviance4variables_nutlim_modGS_CP but for C:N
 #---------------------------------------------------------------
 deviance4variables_nutlim_modGS_CN <- function(data) {
   b1 <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
