@@ -42,6 +42,7 @@ This will create Figures 1 and 2, Extended Data Figure 1, and Table 1 in Supplem
 To reproduce all data analyses / figures / tables, and then make them available within an R session, do:
 
 ```r
+source("_drake.R")
 source("make.R")
 drake::loadd()
 ```
