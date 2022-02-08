@@ -12,6 +12,7 @@ Figures/
 *tmp*
 *.rda
 *.rds
+#.pdf
 *.html
 *.swp
 R/*.swp
