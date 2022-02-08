@@ -35,7 +35,9 @@ source("_drake.R")
 drake::make(plan, targets = c("fig_1_pdf", "fig_2_pdf", "ed_fig_1_pdf","sp_table_1"), lock_envir = FALSE)
 ```
 
-This will create Figures 1 and 2, Extended Data Figure 1, and Table 1 in Supplementary Information as presented in the manuscript along with all its dependencies. All output will be automatically placed in a directory called `output` (it is going to be automatically created for you).
+This will create Figures 1 and 2, Extended Data Figure 1, and Table 1 in Supplementary Information as presented in the manuscript along with all its dependencies. 
+
+**All output will be automatically placed in a directory called `output` (it is going to be automatically created for you).**
 
 To reproduce all data analyses / figures / tables, and then make them available within an R session, do:
 
