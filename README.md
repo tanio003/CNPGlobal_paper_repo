@@ -30,10 +30,10 @@ To reproduce particular targets outlined in `R/plan.R`, do e.g.:
 
 ```r
 source("_drake.R")
-drake::make(plan, targets = c("fig_1_pdf", "fig_2_pdf", "fig_3_pdf", "fig_4_pdf", "ed_fig_1_pdf","sp_table_1"), lock_envir = FALSE)
+drake::make(plan, targets = c("fig_1_pdf", "fig_2_pdf", "fig_3_pdf", "fig_4_pdf", "ed_fig_1_pdf","sp_table_2"), lock_envir = FALSE)
 ```
 
-This example above will create Main Figures 1-4, Extended Data Figure 1, and Table 1 in Supplementary Information as presented in the manuscript along with all its dependencies. 
+This example above will create Main Figures 1-4, Extended Data Figure 1, and Table 2 in Supplementary Information as presented in the manuscript along with all its dependencies. 
 
 **All output will be automatically placed in a directory called `output` (it is going to be automatically created for you).**
 
@@ -45,7 +45,9 @@ source("make.R")
 drake::loadd()
 ```
 
-This whole process should be completed in less than 5 minutes. The process for making the main Figure 4 using 2000 models from GAM posterior distribution will take the longest time (~1-2 minutes). Main Figures 1a-c (created with ODV) and Supplementary Figures 1-3 are located in the separate `pics` folder. Note that figures created here were subsequently cleaned using Adobe Illustrator for the manuscript.
+This whole process should be completed in less than 5 minutes. The process for making the main Figure 4 using 2000 models from GAM posterior distribution will take the longest time (~1-2 minutes). 
+
+Main Figures 1a-c (created with ODV) and Supplementary Figures 1-3 are located in the separate `pics` folder. Supplementary Table 1 is a list of POM samples collected and is not reproduced here. Note that figures created here were subsequently cleaned using Adobe Illustrator for the manuscript.
 
 ### This paper was produced using the following software and associated packages:
 ```
