@@ -8,11 +8,13 @@ Love](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)
 
 This repository contains code and data needed to reproduce the article:
 
-**Tanioka, T. Garcia, C. A., Larkin, A. A., Garcia, N. S., Fagan, A. J., Martiny A. C.** (*submitted*) Global patterns and drivers of C:N:P in marine ecosystems.
+**Tanioka, T. Garcia, C. A., Larkin, A. A., Garcia, N. S., Fagan, A. J., Martiny A. C.** (*under review*) Global patterns and drivers of C:N:P in marine ecosystems.
 
 **When using the data or code from this project, please cite it as:**
 
 Tanioka, T. Garcia, C. A., Larkin, A. A., Garcia, N. S., Fagan, A. J., Martiny A. C (2022). Initial Submission of Tanioka et al. (2022) (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.6015417
+
+Tatsuro Tanioka, Catherine Garcia, Alyse Larkin et al. Global patterns and drivers of C:N:P in marine ecosystems, 25 February 2022, PREPRINT (Version 1) available at Research Square [https://doi.org/10.21203/rs.3.rs-1344335/v1]
 
 ## Instructions
 
