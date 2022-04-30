@@ -1,0 +1,3839 @@
+---
+title: "Figures_Main"
+output: html_notebook
+
+---
+
+This is an R Markdown document. The aim here is make publication-quality figures.
+
+## Loading packages 
+
+```{r}
+rm(list=ls())
+```
+
+```{r}
+library(plyr)
+library(readxl)
+library(writexl)
+library(naniar)
+library(tidyverse)
+library(data.table)
+library(multcomp)
+library(dplyr)
+library(rstan)
+library(lubridate)
+library(R.matlab)
+library(rlist)
+library(proto)
+# library(gsubfn)
+library(gplots)
+library(ggplot2)
+library(ggpubr)
+library(ggpmisc)
+library(viridis)
+library(modelr)
+library(hrbrthemes)
+library(corrplot)
+library(pheatmap)
+library(gtable)
+library(grid)
+library(pals)
+# loading extra packages required
+library(MASS)
+library(multcomp)
+library(stringr)
+library(gamm4)
+library(tidyr)
+library(ggthemes)
+library(cowplot)
+library(kableExtra)
+library(docxtools)
+library(knitr)
+library(gratia)
+library(latex2exp)
+library(tidymv)
+library(jtools)
+library(plotly)
+library(processx)
+library(scales)
+library(mosaic)
+library(boot)
+library(matrixStats)
+# loading R package mgcv for conducting GAM
+library(mgcv)
+library(mgcViz)
+library(RColorBrewer)
+
+library(oce)
+library(ocedata)
+data("coastlineWorld")
+library(cmocean)
+```
+
+```{r}
+# Custom function to calculate mode
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+```
+
+```{r}
+# Function for conducting Tukey HSD test on Nutrient limitation as ac categorial variable with full gam model
+Nutlim_effect_cnp_gam_summary <- function(model) {
+  contr <- matrix(0, nrow = 6, ncol = length(coef(model)))
+  colnames(contr) <- names(coef(model))
+  rownames(contr) <- c("PN - P", "N - P", "Fe - P", "N - PN", "Fe - PN","Fe - N")
+  contr[, 2:4] <- rbind(c(1, 0, 0), c(0, 1, 0), c(0, 0, 1),c(-1, 1, 0), c(-1, 0, 1), c(0, -1, 1))
+  g2 <- glht(model, linfct = contr)
+  summary(g2)
+}
+
+# Function for computing mean and SE for the intercept for different nutrient limitation
+Nutlim_effect_cnp_gam_intercept <- function(model,data) {
+  Nutlim_names <- c("P-lim","PN-colim", "N-lim","Fe-lim")
+  out <- summary(model)
+  mean_intercept<- (c(out$p.coeff[1], 
+                   out$p.coeff[1]+out$p.coeff[2], 
+                   out$p.coeff[1]+out$p.coeff[3],
+                   out$p.coeff[1]+out$p.coeff[4]))
+  se_intercept <- (c(out$se[1], 
+                   out$se[2], 
+                   out$se[3],
+                   out$se[4]))
+  n <- data %>% group_by(sp_Nutlim_CESM2) %>% summarise(n = n())
+  nsamples <- n[,2]
+  intercept.frame <- data.frame(Nutlim_names, 
+                                mean = exp(mean_intercept), 
+                                SE = exp(mean_intercept)*se_intercept,
+                                nsamples = nsamples)
+  colnames(intercept.frame) <- c("Nutlim", "mean","SE","n")
+  intercept.frame
+}
+```
+
+```{r}
+# Function to make Del C:P (SSP370-historic) Plot for CESM model output projections
+# ----- Not used in the main Manuscript ------
+plot_delCP_SSP370_hist <- function(data_SSP370,data_hist,titlename,filename,save) {
+
+if(save == 1) {   
+pdf(file=paste("Figures/",filename,sep=""),
+        width = 8, # The width of the plot in inches
+        height = 5)
+}
+  
+par(mar=c(1.5, 1, 1.5, 1))
+lonlim <- c(-180, 180)
+latlim <- c(-90, 90)
+Zlim = c(-50,50)
+Col = cmocean('balance')(20)
+
+drawPalette(zlim = Zlim,
+            col = Col,
+            at = seq(-50,50,10),
+            pos = 4,
+            drawTriangles = TRUE,
+            cex = 0.75,
+            las = 1)
+
+mapPlot(coastlineWorld, 
+        projection="+proj=robin",
+        col="black", 
+        longitudelim=lonlim, 
+        latitudelim=latlim, 
+        axes = TRUE,
+        drawBox = FALSE,
+        grid = FALSE,
+        clip = TRUE,
+        border = "black",
+        lonlabels = TRUE,
+        latlabels = TRUE,
+        geographical = 0,
+        axisStyle = 1)
+
+# # Dummy background color for polar regions
+# mapImage(lon,
+#          lat[lat_mask],
+#          sst_surf_historic[,lat_mask],
+# #         pred_cp_Nutonly_historic_grid,
+#          zlim = Zlim,
+#          col = "gray50")
+
+mapImage(lon,
+         lat,
+         # (data_SSP370 - data_hist)/data_hist*100,
+         (data_SSP370 - data_hist),
+         zlim = Zlim,
+         col = Col)
+
+title(titlename, outer=FALSE, cex=0.75) # title for overall plot
+
+# Adding Latitude and Longitde symbols
+mapText(-180, -90, "90°S", col="black", cex = 1.0)
+mapText(-180, -45, "45°S", col="black", cex = 1.0)
+mapText(-180, 0, "0°", col="black", cex = 1.0)
+mapText(-180, 45, "45°N", col="black", cex = 1.0)
+mapText(-180, 90, "90°N", col="black", cex = 1.0)
+
+mapText(-90, -95, "90°W", col="black", cex = 1.0)
+mapText(90, -95, "90°E", col="black", cex = 1.0)
+mapText(0, -95, "180°E", col="black", cex = 1.0)
+
+if(save == 1) {   
+  dev.off()
+}
+
+  
+}
+```
+
+```{r}
+# Function to make Del N:P (SSP370-historic) Plot for CESM model output projections
+# ----- Not used in the main Manuscript ------
+plot_delNP_SSP370_hist <- function(data_SSP370,data_hist,titlename,filename,save) {
+
+if(save == 1) {   
+pdf(file=paste("Figures/",filename,sep=""),
+        width = 8, # The width of the plot in inches
+        height = 5)
+}
+  
+par(mar=c(1.5, 1, 1.5, 1))
+lonlim <- c(-180, 180)
+latlim <- c(-90, 90)
+Zlim = c(-10,10)
+Col = cmocean('balance')(20)
+
+drawPalette(zlim = Zlim,
+            col = Col,
+            at = seq(-10,10,2),
+            pos = 4,
+            drawTriangles = TRUE,
+            cex = 0.75,
+            las = 1)
+
+mapPlot(coastlineWorld, 
+        projection="+proj=robin",
+        col="black", 
+        longitudelim=lonlim, 
+        latitudelim=latlim, 
+        axes = TRUE,
+        drawBox = FALSE,
+        grid = FALSE,
+        clip = TRUE,
+        border = "black",
+        lonlabels = TRUE,
+        latlabels = TRUE,
+        geographical = 0,
+        axisStyle = 1)
+
+# # Dummy background color for polar regions
+# mapImage(lon,
+#          lat[lat_mask],
+#          sst_surf_historic[,lat_mask],
+# #         pred_cp_Nutonly_historic_grid,
+#          zlim = Zlim,
+#          col = "gray50")
+
+mapImage(lon,
+         lat,
+         # (data_SSP370 - data_hist)/data_hist*100,
+         (data_SSP370 - data_hist),
+         zlim = Zlim,
+         col = Col)
+
+title(titlename, outer=FALSE, cex=0.75) # title for overall plot
+
+# Adding Latitude and Longitde symbols
+mapText(-180, -90, "90°S", col="black", cex = 1.0)
+mapText(-180, -45, "45°S", col="black", cex = 1.0)
+mapText(-180, 0, "0°", col="black", cex = 1.0)
+mapText(-180, 45, "45°N", col="black", cex = 1.0)
+mapText(-180, 90, "90°N", col="black", cex = 1.0)
+
+mapText(-90, -95, "90°W", col="black", cex = 1.0)
+mapText(90, -95, "90°E", col="black", cex = 1.0)
+mapText(0, -95, "180°E", col="black", cex = 1.0)
+
+if(save == 1) {   
+  dev.off()
+}
+
+  
+}
+```
+
+```{r}
+# Function to make Model confidence Plot for CESM model output projections
+# ----- Not used in the main Manuscript ------
+plot_modelconf <- function(data_diffposcount,titlename,filename,save) {
+
+if(save == 1) {   
+pdf(file=paste("Figures/",filename,sep=""),
+        width = 8, # The width of the plot in inches
+        height = 5)
+}
+
+par(mar=c(1.5, 1, 1.5, 1))
+lonlim <- c(-180, 180)
+latlim <- c(-90, 90)
+Zlim = c(50,100)
+Col = brewer.pal(5, "Oranges")
+
+modelconf <- pmax((data_diffposcount)/2000,1-(data_diffposcount)/2000)*100
+
+cm <- colormap(modelconf,
+               col=Col)
+
+drawPalette(zlim = Zlim,
+            col = Col,
+            at = seq(50,100,10),
+            pos = 4,
+            drawTriangles = FALSE,
+            cex = 0.7,
+            las = 0)
+
+mapPlot(coastlineWorld, 
+        projection="+proj=robin",
+        col="black", 
+        longitudelim=lonlim, 
+        latitudelim=latlim, 
+        axes = TRUE,
+        drawBox = FALSE,
+        grid = FALSE,
+        clip = TRUE,
+        border = "black",
+        lonlabels = TRUE,
+        latlabels = TRUE,
+        geographical = 0,
+        axisStyle = 1)
+
+mapImage(lon,
+         lat,
+         modelconf,
+         zlim = Zlim,
+         col = Col)
+
+title(titlename, outer=FALSE, cex=0.75) # title for overall plot
+
+# Adding Latitude and Longitde symbols
+mapText(-180, -90, "90°S", col="black", cex = 1.0)
+mapText(-180, -45, "45°S", col="black", cex = 1.0)
+mapText(-180, 0, "0°", col="black", cex = 1.0)
+mapText(-180, 45, "45°N", col="black", cex = 1.0)
+mapText(-180, 90, "90°N", col="black", cex = 1.0)
+
+mapText(-90, -95, "90°W", col="black", cex = 1.0)
+mapText(90, -95, "90°E", col="black", cex = 1.0)
+mapText(0, -95, "180°E", col="black", cex = 1.0)
+
+if(save == 1) {   
+  dev.off()
+}
+
+}
+```
+
+```{r}
+# Function to calculate 95% confidence interval for weighted mean
+# Following Eqn 6 of Hedges et al. 1999, Ecology
+# Assumes Fixed Effect Model
+### Summary Stats related to Figure 1 and metadata
+
+weighted.ttest.ci <- function(x, weights, conf.level = 0.95) {
+    require(Hmisc)
+    nx <- length(x)
+    df <- nx - 1
+    vx <- wtd.var(x, weights, normwt = TRUE) ## From Hmisc
+    mx <- weighted.mean(x, weights)
+    stderr <- sqrt(vx/nx)
+    tstat <- mx/stderr ## not mx - mu
+    alpha <- 1 - conf.level
+    cint <- qt(1 - alpha/2, df)
+    cint <- tstat + c(-cint, cint)
+    cint * stderr
+}
+
+```
+
+## Loading and cleaning data (filtering out)
+```{r}
+dataPOM_orig <-  read_excel("/Users/tatsurotanioka/Desktop/Project/Simons_Martiny/POM_Global/Merge_Ustick_MartinPOM/MartinyLab_surfaceCNP_updated.xlsx",sheet="Sheet1")
+dataLJU_POM_orig <- read_excel("/Users/tatsurotanioka/Desktop/Project/Simons_Martiny/POM_Global/Merge_Ustick_MartinPOM/SurfaceMartinyPOM_LJU_Merged.xlsx",sheet="Sheet1")
+
+summary(as.factor(dataPOM_orig$Transect))
+```
+
+
+```{r}
+dataPOM <- dataPOM_orig %>% 
+  filter(POPavg > 0.005 & PONavg > 0.005) 
+dataLJU_POM <- dataLJU_POM_orig %>% 
+  filter(POPavg > 0.005 & PONavg > 0.005)
+# No outliers detected this way
+
+# Filtering outliers based on Lee et al. 2021 (C:P > 500, N:P < 1, N:P > 100)
+dataPOM <- dataPOM %>% 
+  filter(CP <= 500 & NP >= 1 & NP <= 100) 
+dataLJU_POM <- dataLJU_POM %>% 
+  filter(CP <= 500 & NP >= 1 & NP <= 100) 
+
+# Filtering out anomalous high temperature
+dataPOM <- dataPOM %>% 
+  mutate(SST = ifelse(SST > 40, NA, SST)) 
+dataLJU_POM <- dataLJU_POM %>% 
+  mutate(SST = ifelse(SST > 40, NA, SST)) 
+
+# Set nutrient detection limit for fair comparison (following Lee et al. 2021, GBC)
+# Detection limits for Nitrate and Phosphate were 0.1 and 0.01 μM, respectively. Nitrate concentrations often fell below the detection limit and were assumed to be 0.1 μM for use in statistical analysis and model predictions. Environmental
+dataPOM <- dataPOM %>% 
+  mutate(PO4_fill = ifelse(PO4_fill < 0.01, 0.01, PO4_fill)) 
+dataPOM <- dataPOM %>% 
+  mutate(NO3_fill = ifelse(NO3_fill < 0.1, 0.1, NO3_fill)) 
+dataLJU_POM <- dataLJU_POM %>% 
+  mutate(PO4_fill = ifelse(PO4_fill < 0.01, 0.01, PO4_fill)) 
+dataLJU_POM <- dataLJU_POM %>% 
+  mutate(NO3_fill = ifelse(NO3_fill < 0.1, 0.1, NO3_fill)) 
+
+# Filtering A39 as this was added separately
+dataPOM <- dataPOM%>% 
+  filter(Transect != "A39") 
+dataLJU_POM <- dataLJU_POM %>% 
+  filter(Transect != "A39") 
+
+dataPOM_filtered = dataPOM
+dataLJU_POM_filtered = dataLJU_POM
+
+# Adding % eukaryotes = % coccolithophores + % chlorophytes as a new variable
+dataPOM_filtered <- mutate(dataPOM_filtered, frac_euk_NOBM = frac_coc_NOBM + frac_chloro_NOBM)
+dataLJU_POM_filtered <- mutate(dataLJU_POM_filtered, frac_euk_NOBM = frac_coc_NOBM + frac_chloro_NOBM)
+
+# Adding log-transformed variables and renaming the variable
+LJU_POM <- mutate(dataLJU_POM_filtered,
+                  absLatitude = abs(Latitude),
+                  logCP = log(CP), logCN = log(CN), logNP = log(NP),
+                  logPO4_fill = log(PO4_fill),
+                  logNO3_fill = log(NO3_fill),
+#                  logPO4_fill = log(PO4_GLODAP),
+#                  logNO3_fill = log(NO3_GLODAP),
+                  logPO4_WOA = log(PO4_WOA),
+                  logNO3_WOA = log(NO3_WOA),
+                  logPO4_GLODAP = log(PO4_GLODAP),
+                  logNO3_GLODAP = log(NO3_GLODAP),                  
+                  logMLD = log(MLD_Holte17),
+                  logCHLOR_a = log(CHLOR_a_MODIS),
+                  logFeT = log(FeT_CESM),
+                  logMLPAR = log(MLPAR),
+                  region =  ifelse(absLatitude < 15, "Tropical",
+                                   ifelse(absLatitude >= 15 & absLatitude < 45, "Subtropical",
+                                          ifelse(absLatitude >= 45 & absLatitude < 65, "Subpolar",
+                                   "Polar"))),
+                  area_weights = cos(deg2rad(Latitude)),
+                  sp_Nutlim_CESM2 = sp_Nutlim_CESM2
+                  )
+LJU_POM$region <- factor(LJU_POM$region,
+                                      levels = c("Polar", "Subpolar", "Subtropical","Tropical"))
+
+LJU_POM$sp_Nutlim_CESM2 <- factor(LJU_POM$sp_Nutlim_CESM2,
+                                     levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+```
+
+### Adding Nutrient limitation information based on $\theta$ from Ustick et al. 2021 
+
+Note that the variable "Theta" is is given by its number multiplied by $\pi$. 
+
+  * P stress (Plim): $0.12\pi < \theta \le 0.64\pi$
+  * Fe/P co-stress (FePColim): $0.64\pi < \theta \le 0.8\pi$
+  * Fe stress (Felim): $0.8\pi < \theta \le 1.3\pi$
+  * Fe/N co-stress (FeNColim): $1.3\pi < \theta \le 1.46\pi$
+  * N stress (Nlim): $1.46\pi < \theta \le 1.9\pi$
+  * P/N co-stress (PNColim): $1.9\pi < \theta \le 0.12\pi$
+  
+  * Merge P and P/Fe stress to one category to P-limitation
+  * Merge N and N/Fe stress to one category to N-limitation
+```{r}
+Nutlim <- 0
+Nutlim <- factor(Nutlim, levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+LJU_POM$Nutlim <- "Fe-lim"
+LJU_POM$Nutlim[LJU_POM$Theta > 0.12 & LJU_POM$Theta <= 0.8] <- "P-lim"
+LJU_POM$Nutlim[LJU_POM$Theta > 1.3 & LJU_POM$Theta <= 1.9] <- "N-lim"
+LJU_POM$Nutlim[LJU_POM$Theta > 1.9 | LJU_POM$Theta <= 0.12] <- "PN-colim"
+LJU_POM$Nutlim = factor(LJU_POM$Nutlim,
+                                     levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+
+# Separate data based on Nutricline > 0
+LJU_POM_gt0= filter(LJU_POM, Nutcline_GLODAP_1um > 0)
+
+summary(LJU_POM$Nutlim)
+   # P-lim PN-colim    N-lim   Fe-lim 
+   #   121       65      195       85 
+summary(LJU_POM_gt0$Nutlim)
+   # P-lim PN-colim    N-lim   Fe-lim 
+   #   120       65      193       38 
+```
+
+```{r}
+# Adding log-transformed variables and renaming the variable
+region <- c("Polar", "Subpolar", "Subtropical","Tropical")
+
+POM_all <- mutate(dataPOM_filtered,
+                  absLatitude = abs(Latitude),
+                  logCP = log(CP), logCN = log(CN), logNP = log(NP),
+                  logPO4_fill = log(PO4_fill),
+                  logNO3_fill = log(NO3_fill),
+                  # logPO4_fill = log(PO4_GLODAP),
+                  # logNO3_fill = log(NO3_GLODAP),
+                  logPO4_WOA = log(PO4_WOA),
+                  logNO3_WOA = log(NO3_WOA), 
+                  logPO4_GLODAP = log(PO4_GLODAP),
+                  logNO3_GLODAP = log(NO3_GLODAP),     
+                  logMLD = log(MLD_Holte17),
+                  logCHLOR_a = log(CHLOR_a_MODIS),
+                  logFeT = log(FeT_CESM),
+                  logMLPAR = log(MLPAR),
+                  region =  ifelse(absLatitude < 15, "Tropical",
+                                   ifelse(absLatitude >= 15 & absLatitude < 45, "Subtropical",
+                                          ifelse(absLatitude >= 45 & absLatitude < 65, "Subpolar",
+                                   "Polar"))),
+                  area_weights = cos(deg2rad(Latitude)),
+                  sp_Nutlim_CESM2 = sp_Nutlim_CESM2
+                  ) 
+
+POM_all$region <- factor(POM_all$region,
+                                      levels = c("Polar", "Subpolar", "Subtropical","Tropical"))
+
+POM_all$sp_Nutlim_CESM2 <- factor(POM_all$sp_Nutlim_CESM2,
+                                     levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+
+# POM_all binned by 1by1 grid for visualization
+lat_grid <- seq(from = -89.5, to = 89.5, by = 1.0)
+lon_grid <- seq(from = -179.5, to = 179.5, by = 1.0)
+
+POM_all_binned <- POM_all %>% 
+  mutate(binlon = cut(Longitude, seq(from = -180.0, to = 180.0, by = 1.0), include.lowest = T, right = F), binlat = cut(Latitude, seq(from = -90.0, to = 90.0, by = 1.0), include.lowest = T, right = F)
+         )  %>% group_by(binlat, binlon) %>%  summarise(POCavg = mean(POCavg),
+                                                        PONavg = mean(PONavg), 
+            POPavg = mean(POPavg),
+            logCP = mean(logCP), logNP = mean(logNP), logCN = mean(logCN),
+            absLatitude = mean(absLatitude), 
+            SST = mean(SST), 
+            logPO4_fill = mean(logPO4_fill),
+            logNO3_fill = mean(logNO3_fill),
+            Nutcline_GLODAP_1um = mean(Nutcline_GLODAP_1um),
+            Nstar_200_GLODAP = mean(Nstar_200_GLODAP),
+            MLD_Holte17 = mean(MLD_Holte17),
+            MLPAR = mean(MLPAR),
+            CHLOR_a_MODIS = mean(CHLOR_a_MODIS),
+            SPP_Rich_Righetti19 = mean(SPP_Rich_Righetti19),
+            frac_dia_NOBM = mean(frac_dia_NOBM),
+            frac_cya_NOBM = mean(frac_cya_NOBM),
+            region =  ifelse(absLatitude < 15, "Tropical",
+                             ifelse(absLatitude >= 15 & absLatitude < 45, "Subtropical",
+                                    ifelse(absLatitude >= 45 & absLatitude < 65, "Subpolar",
+                                           "Polar"))),            
+            area_weights = cos(deg2rad(Latitude)),
+            sp_Nutlim_CESM2 = getmode(sp_Nutlim_CESM2)
+            )  %>% replace_with_na_all(condition = ~.x == -Inf) %>% mutate(Latitude = lat_grid[as.integer(binlat)],Longitude = lon_grid[as.integer(binlon)])
+POM_all_binned$region <- factor(POM_all_binned$region,
+                                      levels = c("Polar", "Subpolar", "Subtropical","Tropical"))
+
+LJU_POM_binned <- LJU_POM %>% 
+  mutate(binlon = cut(Longitude, seq(from = -180.0, to = 180.0, by = 1.0), include.lowest = T, right = F), binlat = cut(Latitude, seq(from = -90.0, to = 90.0, by = 1.0), include.lowest = T, right = F)
+         )  %>% group_by(binlat, binlon) %>%  summarise(POCavg = mean(POCavg),
+                                                        PONavg = mean(PONavg), 
+            POPavg = mean(POPavg),
+            logCP = mean(logCP), logNP = mean(logNP), logCN = mean(logCN),
+            absLatitude = mean(absLatitude), 
+            SST = mean(SST), 
+            logPO4_fill = mean(logPO4_fill),
+            logNO3_fill = mean(logNO3_fill),
+            Nutcline_GLODAP_1um = mean(Nutcline_GLODAP_1um),
+            Nstar_200_GLODAP = mean(Nstar_200_GLODAP),
+            MLD_Holte17 = mean(MLD_Holte17),
+            MLPAR = mean(MLPAR),
+            CHLOR_a_MODIS = mean(CHLOR_a_MODIS),
+            SPP_Rich_Righetti19 = mean(SPP_Rich_Righetti19),
+            frac_dia_NOBM = mean(frac_dia_NOBM),
+            frac_cya_NOBM = mean(frac_cya_NOBM),
+            Nutlim = getmode(Nutlim),
+            region =  ifelse(absLatitude < 15, "Tropical",
+                             ifelse(absLatitude >= 15 & absLatitude < 45, "Subtropical",
+                                    ifelse(absLatitude >= 45 & absLatitude < 65, "Subpolar",
+                                           "Polar"))),            
+            area_weights = cos(deg2rad(Latitude)),
+            sp_Nutlim_CESM2 = sp_Nutlim_CESM2
+            )  %>% replace_with_na_all(condition = ~.x == -Inf) %>% mutate(Latitude = lat_grid[as.integer(binlat)],Longitude = lon_grid[as.integer(binlon)])
+LJU_POM_binned$region <- factor(LJU_POM_binned$region,
+                                      levels = c("Polar", "Subpolar", "Subtropical","Tropical"))
+
+# Exporting POM_all to csv
+write.csv(POM_all,"~/Desktop/Project/Simons_Martiny/POM_Global/Merge_Ustick_MartinPOM/ODV/POM_all.csv")
+
+```
+```{r}
+# Preparing dataset for GAM analyses by removing NaNs
+# Removing sample points with NaNs in key covariates for conducing gam
+POM_all_gam <- POM_all %>% dplyr::select(logCP, logNP, logCN,
+                                          SST, 
+                                          logNO3_fill,
+                                          logPO4_fill,
+                                          Nutcline_GLODAP_1um,
+                                          Nstar_200_GLODAP,
+                                          MLPAR,
+                                         sp_Nutlim_CESM2,
+                                         absLatitude
+                                          ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf)
+
+POM_ge15_gam = filter(POM_all_gam, SST >= 15)
+POM_lt15_gam = filter(POM_all_gam, SST < 15)
+POM_highlat_gam = filter(POM_all_gam, absLatitude >= 45)
+POM_lowlat_gam = filter(POM_all_gam,absLatitude < 45)
+
+POM_all_gam <- tidyr::drop_na(POM_all_gam, SST, MLPAR, logNO3_fill, logPO4_fill, Nstar_200_GLODAP, Nutcline_GLODAP_1um,sp_Nutlim_CESM2) 
+POM_lt15_gam <- drop_na(POM_lt15_gam, SST, MLPAR, logNO3_fill, logPO4_fill, Nstar_200_GLODAP, Nutcline_GLODAP_1um,sp_Nutlim_CESM2)
+POM_ge15_gam <- drop_na(POM_ge15_gam, SST, MLPAR, logNO3_fill, logPO4_fill, Nstar_200_GLODAP, Nutcline_GLODAP_1um,sp_Nutlim_CESM2)
+
+POM_highlat_gam <- drop_na(POM_highlat_gam, SST, MLPAR, logNO3_fill, logPO4_fill, Nstar_200_GLODAP, Nutcline_GLODAP_1um,sp_Nutlim_CESM2)
+POM_lowlat_gam <- drop_na(POM_lowlat_gam, SST, MLPAR, logNO3_fill, logPO4_fill, Nstar_200_GLODAP, Nutcline_GLODAP_1um,sp_Nutlim_CESM2)
+
+LJU_POM_gam <- LJU_POM %>% dplyr::select(logCP, logNP, logCN,
+                                          SST, 
+                                          logNO3_fill,
+                                          logPO4_fill,
+                                          Nutcline_GLODAP_1um,
+                                          Nstar_200_GLODAP,
+                                          MLPAR,
+                                          Nutlim,
+                                         sp_Nutlim_CESM2,
+                                         absLatitude
+                                          ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf)
+
+LJU_POM_lowlat_gam = filter(LJU_POM_gam,absLatitude < 45)
+LJU_POM_lowlat_gam <- drop_na(LJU_POM_lowlat_gam, SST, MLPAR, logNO3_fill, logPO4_fill, Nutcline_GLODAP_1um,Nutlim)
+
+
+# Load the function to calcualte deviance explained by each of covariates
+source("deviance4variables.R")
+source("deviance4variables_nutlim.R")
+source("deviance4variables_nutlim_modGS_CP.R")
+source("deviance4variables_nutlim_modGS_NP.R")
+source("deviance4variables_nutlim_modGS_CN.R")
+source("deviance3variables.R")
+source("deviance2variables.R")
+```
+
+## Figure 1ab. Latitudinal Trend C:P, N:P, and C:N fitted with GAMs (a) and regional box plot (b)
+
+```{r}
+# Define color palette
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+figa<- 
+  {ggplot(tibble(POM_all$Latitude, exp(POM_all$logCP)), aes(POM_all$Latitude, exp(POM_all$logCP))) + 
+      geom_hline(yintercept = 106, linetype = "dashed", size = 0.5, color = gg_color_hue(3)[1]) + 
+      geom_vline(xintercept = 0, linetype = "dashed", size = 0.2) + 
+      geom_jitter(color = gg_color_hue(3)[1], alpha = 0.1) + 
+      geom_smooth(method = 'gam',fullrange = TRUE, color = gg_color_hue(3)[1],fill = gg_color_hue(3)[1]) + 
+      labs(y = '', x = 'Latitude') + 
+      xlim(-70,55) + 
+      ylim(75,250) + 
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      theme_bw() + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank())} +
+  coord_flip() +  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank())
+figa <- ggplotly(figa)
+
+figb<- 
+  {ggplot(tibble(POM_all$Latitude, exp(POM_all$logNP)), aes(POM_all$Latitude, exp(POM_all$logNP))) + 
+      geom_hline(yintercept = 16, linetype = "dashed", size = 0.5, color = gg_color_hue(3)[2]) + 
+      geom_vline(xintercept = 0, linetype = "dashed", size = 0.2) + 
+      geom_jitter(color = gg_color_hue(3)[2], alpha = 0.1) + 
+      geom_smooth(method = 'gam',fullrange = TRUE, color = gg_color_hue(3)[2], fill = gg_color_hue(3)[2]) + 
+      labs(y = '', x = '') + 
+      xlim(-70,55) + 
+      ylim(10,35) + 
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      theme_bw() + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank())} + 
+    coord_flip() +  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank())
+figb <- ggplotly(figb)
+
+figc<- 
+  {ggplot(tibble(POM_all$Latitude, exp(POM_all$logCN)), aes(POM_all$Latitude, exp(POM_all$logCN))) + 
+      geom_hline(yintercept = 106/16, linetype = "dashed", size = 0.5, color = gg_color_hue(3)[3]) + 
+      geom_vline(xintercept = 0, linetype = "dashed", size = 0.2) + 
+      geom_jitter(color = gg_color_hue(3)[3], alpha = 0.1) + 
+      geom_smooth(method = 'gam',fullrange = TRUE, color = gg_color_hue(3)[3], fill = gg_color_hue(3)[3]) + 
+      labs(y = '', x = '') + 
+      xlim(-70,55) + 
+      ylim(5,9) + 
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      theme_bw() + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank())} + 
+  coord_flip() +  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank())
+
+figc <- ggplotly(figc)
+
+## Figure 1b. Box Plot for regional C:P, N:P, and C:N
+
+figa2 <- {ggplot(data = POM_all, mapping = aes(y = exp(logCP), x = region)) + 
+  geom_boxplot(fill = gg_color_hue(3)[1]) + 
+  geom_hline(yintercept = 106, linetype = "dashed", size = 0.5, color = gg_color_hue(3)[1]) + 
+  scale_x_discrete(limits=rev) + 
+    labs(y = 'C:P', x = '') + 
+    stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
+    ylim(75,250) +
+    theme_bw() + 
+    theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} + coord_flip() + theme(axis.text.y = element_text(angle = 45)) 
+figa2_ply <- ggplotly(figa2)
+
+figb2 <- {ggplot(data = POM_all, mapping = aes(y = exp(logNP), x = region)) + 
+  geom_boxplot(fill = gg_color_hue(3)[2]) + 
+  geom_hline(yintercept = 16, linetype = "dashed", size = 0.5, color = gg_color_hue(3)[2]) + 
+  scale_x_discrete(limits=rev) + 
+    labs(y = 'N:P', x = '') + 
+    stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
+    ylim(10,35) +
+    theme_bw() + 
+    theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} + coord_flip()
+figb2_ply <- ggplotly(figb2)
+
+figc2 <- {ggplot(data = POM_all, mapping = aes(y = exp(logCN), x = region)) + 
+  geom_boxplot(fill = gg_color_hue(3)[3]) + 
+  geom_hline(yintercept = 106/16, linetype = "dashed", size = 0.5, color = gg_color_hue(3)[3]) + 
+  scale_x_discrete(limits=rev) + 
+    labs(y = 'C:N', x = '') + 
+    stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
+    ylim(5,9) +
+    theme_bw() + 
+    theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} + coord_flip()
+figc2_ply <- ggplotly(figc2)
+
+fig1ab <-plotly::subplot(figa, figb, figc, figa2_ply,figb2_ply, figc2_ply, nrows = 2, widths = c(0.33,0.34,0.33), shareX = FALSE, shareY = TRUE, titleX = TRUE, titleY = TRUE, margin = 0.01) 
+# fig1ab <-subplot(figa, figb, figc, figa2, figb2, figc2) 
+fig1ab
+
+# Save as pdf using orca 
+
+orca(fig1ab, 'Figures/Fig1_cnp_lat_boxregional.pdf')
+server <- orca_serve()
+server$close()
+unlink('Fig1_cnp_lat_boxregional.pdf')
+```
+### Figure 1 with lat plot only
+```{r}
+figa<- 
+  {ggplot(tibble(POM_all$Latitude, exp(POM_all$logCP)), aes(POM_all$Latitude, exp(POM_all$logCP))) + 
+      geom_hline(yintercept = 106, linetype = "dashed", size = 0.5, color = gg_color_hue(3)[1]) + 
+      geom_vline(xintercept = 0, linetype = "dashed", size = 0.2) + 
+      geom_jitter(color = gg_color_hue(3)[1], alpha = 0.1) + 
+      geom_smooth(method = 'gam',fullrange = FALSE, color = gg_color_hue(3)[1],fill = gg_color_hue(3)[1]) + 
+      labs(y = 'C:P', x = 'Latitude') + 
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      # scale_y_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      coord_cartesian(xlim = c(-70, 55), ylim = c(75, 225)) + 
+      scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
+                          labels = c(75, 100, 125, 150, 175, 200, 225), limits = c(62.5, 237.5)) + 
+      theme_bw(base_size = 10, base_family = "Helvetica") + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank())} + coord_flip() 
+figa <- ggplotly(figa)
+
+figb<- 
+  {ggplot(tibble(POM_all$Latitude, exp(POM_all$logNP)), aes(POM_all$Latitude, exp(POM_all$logNP))) + 
+      geom_hline(yintercept = 16, linetype = "dashed", size = 0.5, color = gg_color_hue(3)[2]) + 
+      geom_vline(xintercept = 0, linetype = "dashed", size = 0.2) + 
+      geom_jitter(color = gg_color_hue(3)[2], alpha = 0.1) + 
+      geom_smooth(method = 'gam',fullrange = TRUE, color = gg_color_hue(3)[2], fill = gg_color_hue(3)[2]) + 
+      labs(y = 'N:P', x = '') + 
+      xlim(-70,55) + 
+      scale_y_continuous(breaks = c(12, 16, 20, 24, 28, 32),
+                          labels = c(12, 16, 20, 24, 28, 32), limits = c(10, 34)) + 
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      theme_bw(base_size = 10, base_family = "Helvetica") + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank())} + coord_flip() 
+figb <- ggplotly(figb)
+
+figc<- 
+  {ggplot(tibble(POM_all$Latitude, exp(POM_all$logCN)), aes(POM_all$Latitude, exp(POM_all$logCN))) + 
+      geom_hline(yintercept = 106/16, linetype = "dashed", size = 0.5, color = gg_color_hue(3)[3]) + 
+      geom_vline(xintercept = 0, linetype = "dashed", size = 0.2) + 
+      geom_jitter(color = gg_color_hue(3)[3], alpha = 0.1) + 
+      geom_smooth(method = 'gam',fullrange = TRUE, color = gg_color_hue(3)[3], fill = gg_color_hue(3)[3]) + 
+      labs(y = 'C:N', x = '') + 
+      xlim(-70,55) + 
+      ylim(5,9) + 
+      scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+      theme_bw(base_size = 10, base_family = "Helvetica") + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank())} + coord_flip() 
+figc <- ggplotly(figc)
+
+fig1a <-plotly::subplot(figa, figb, figc, heights = 0.5, widths = c(0.33,0.34,0.33), shareX = FALSE, shareY = TRUE, titleX = TRUE, titleY = TRUE, margin = 0.01) 
+# fig1ab <-subplot(figa, figb, figc, figa2, figb2, figc2) 
+fig1a
+
+# Save as pdf using orca 
+
+orca(fig1a, 'Figures/Fig1_cnp_lat_.pdf')
+
+server <- orca_serve()
+server$close()
+unlink('Fig1_cnp_lat.pdf')
+```
+
+
+
+### Figure 1 with SST instead of latitude
+```{r}
+
+figa_sst<- 
+  {ggplot(data = POM_all, aes(SST, exp(logCP))) + 
+      geom_jitter(aes(color = abs(absLatitude)), size = 1.0) + 
+      geom_hline(yintercept = 106, linetype = "dotted", size = 0.2, color = "black") +
+      labs(y = '', x = 'SST (°C)') + 
+      scale_x_continuous(limits = c(-5, 35)) +
+      ylim(50,250) + 
+      scale_x_reverse() + 
+      stat_smooth(method = 'gam',fullrange = TRUE, lwd = 1, color = "black") + 
+      scale_color_gradient2(midpoint = 35, low = "red", mid = "gray75",
+                            high = "blue", space = "Lab", name = "", limits = c(0,70)) +
+      theme_bw() +
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank())} +
+  coord_flip() +  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank()) 
+figa_sst <- ggplotly(figa_sst)
+
+figb_sst<- 
+  {ggplot(data = POM_all, aes(SST, exp(logNP))) + 
+      geom_jitter(aes(color = abs(absLatitude)), size = 1.0) + 
+      geom_hline(yintercept = 16, linetype = "dotted", size = 0.2, color = "black") + 
+      labs(y = '', x = 'SST (°C)') + 
+      scale_x_continuous(limits = c(-5, 35)) +
+      ylim(8,40) + 
+      scale_x_reverse() + 
+      stat_smooth(method = 'gam',fullrange = TRUE, lwd = 1, color = "black") + 
+      scale_color_gradient2(midpoint = 35, low = "red", mid = "gray75",
+                            high = "blue", space = "Lab", name = "", limits = c(0,70)) +
+      theme_bw() +
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank())} +
+  coord_flip() +  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank()) 
+figb_sst <- ggplotly(figb_sst)
+
+figc_sst<- 
+  {ggplot(data = POM_all, aes(SST, exp(logCN))) + 
+      geom_jitter(aes(color = abs(absLatitude)), size = 1.0) + 
+      geom_hline(yintercept = 106/16, linetype = "dotted", size = 0.2, color = "black") +
+      labs(y = '', x = 'SST (°C)') + 
+      scale_x_continuous(limits = c(-5, 35)) +
+      ylim(4,10) + 
+      scale_x_reverse() + 
+      stat_smooth(method = 'gam',fullrange = TRUE, lwd = 1, color = "black") + 
+      scale_color_gradient2(midpoint = 35, low = "red", mid = "gray75",
+                            high = "blue", space = "Lab", name = "Abs Latitude", limits = c(0,70)) +
+      theme_bw() +
+      theme(panel.border = element_rect(color = "black"), 
+            panel.grid.major = element_blank(),
+            legend.key.width = unit(dev.size()[1] / 50, "inches"),
+            legend.title=element_text(size=8))} +
+  coord_flip() +  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank())
+figc_sst <- ggplotly(figc_sst)
+
+## Figure 1b. Box Plot for regional C:P, N:P, and C:N
+
+figa2 <- {ggplot(data = POM_all, mapping = aes(y = exp(logCP), x = region)) + 
+  geom_boxplot(fill = gg_color_hue(3)[1]) + 
+  geom_hline(yintercept = 106, linetype = "dotted", size = 0.2, color = "black") + 
+  scale_x_discrete(limits=rev) + 
+    labs(y = 'C:P', x = '') + 
+    stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
+    ylim(50,250) +
+    theme_bw() + 
+    theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} + coord_flip() + theme(axis.text.y = element_text(angle = 45)) 
+figa2_ply <- ggplotly(figa2)
+
+figb2 <- {ggplot(data = POM_all, mapping = aes(y = exp(logNP), x = region)) + 
+  geom_boxplot(fill = gg_color_hue(3)[2]) + 
+  geom_hline(yintercept = 16, linetype = "dotted", size = 0.2, color = "black") + 
+  scale_x_discrete(limits=rev) + 
+    labs(y = 'N:P', x = '') + 
+    stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
+    ylim(8,40) +
+    theme_bw() + 
+    theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} + coord_flip()
+figb2_ply <- ggplotly(figb2)
+
+figc2 <- {ggplot(data = POM_all, mapping = aes(y = exp(logCN), x = region)) + 
+  geom_boxplot(fill = gg_color_hue(3)[3]) + 
+  geom_hline(yintercept = 106/16, linetype = "dotted", size = 0.2, color = "black") + 
+  scale_x_discrete(limits=rev) + 
+    labs(y = 'C:N', x = '') + 
+    stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
+    ylim(4,10) +
+    theme_bw() + 
+    theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} + coord_flip()
+figc2_ply <- ggplotly(figc2)
+
+fig1ab_sst <-plotly::subplot(figa_sst, figb_sst, figc_sst, figa2_ply,figb2_ply, figc2_ply, nrows = 2, widths = c(0.33,0.34,0.33), shareX = FALSE, shareY = TRUE, titleX = TRUE, titleY = TRUE, margin = 0.01) 
+
+fig1ab_sst
+
+# Save as pdf using orca 
+
+orca(fig1ab_sst, 'Figures/Fig1_cnp_sst_boxregional.pdf')
+server <- orca_serve()
+server$close()
+unlink('Fig1_cnp_sst_boxregional.pdf')
+```
+```{r}
+# 0. Area-weighted global mean C:N:P
+# Binned (1 by  1 deg ) and non-binned data give the same results
+cnp_global <- summarise(POM_all, 
+          meancp_global = exp(weighted.mean(logCP, area_weights)),
+          meancp_ci_lb = exp(weighted.ttest.ci(logCP, area_weights)[1]),
+          meancp_ci_ub = exp(weighted.ttest.ci(logCP, area_weights)[2]),
+          meannp_global = exp(weighted.mean(logNP, area_weights)),
+          meannp_ci_lb = exp(weighted.ttest.ci(logNP, area_weights)[1]),
+          meannp_ci_ub = exp(weighted.ttest.ci(logNP, area_weights)[2]),          
+          meancn_global = exp(weighted.mean(logCN, area_weights)),
+          meancn_ci_lb = exp(weighted.ttest.ci(logCN, area_weights)[1]),
+          meancn_ci_ub = exp(weighted.ttest.ci(logCN, area_weights)[2]),          
+          nsamples = n())
+#   meancp_global meancp_ci_lb meancp_ci_ub meannp_global meannp_ci_lb meannp_ci_ub meancn_global meancn_ci_lb meancn_ci_ub nsamples
+#           <dbl>        <dbl>        <dbl>         <dbl>        <dbl>        <dbl>         <dbl>        <dbl>        <dbl>    <int>
+# 1          148.         147.         150.          21.9         21.7         22.2          6.76         6.72         6.81     1295
+  
+cnp_global_binned <- summarise(POM_all_binned, 
+          meancp_global = exp(weighted.mean(logCP, area_weights)),
+          meancp_ci_lb = exp(weighted.ttest.ci(logCP, area_weights)[1]),
+          meancp_ci_ub = exp(weighted.ttest.ci(logCP, area_weights)[2]),
+          meannp_global = exp(weighted.mean(logNP, area_weights)),
+          meannp_ci_lb = exp(weighted.ttest.ci(logNP, area_weights)[1]),
+          meannp_ci_ub = exp(weighted.ttest.ci(logNP, area_weights)[2]),
+          meancn_global = exp(weighted.mean(logCN, area_weights)),
+          meancn_ci_lb = exp(weighted.ttest.ci(logCN, area_weights)[1]),
+          meancn_ci_ub = exp(weighted.ttest.ci(logCN, area_weights)[2]),
+          nsamples = n()
+          )
+#   meancp_global meancp_ci_lb meancp_ci_ub meannp_global meannp_ci_lb meannp_ci_ub meancn_global meancn_ci_lb meancn_ci_ub nsamples
+#           <dbl>        <dbl>        <dbl>         <dbl>        <dbl>        <dbl>         <dbl>        <dbl>        <dbl>    <int>
+# 1          148.         147.         150.          21.9         21.7         22.1          6.76         6.72         6.80     1295
+  
+# 1. Regional Mean C:N:P- extract values from box plot used in Figure 1
+## Function to extract values from ggbox plot
+region_cnp_summmary <- function(x) {
+  mean <- round((ggplot_build(x)$data[[3]]$y), digits = 1)
+  median <- round(rev(ggplot_build(x)$data[[1]]$middle),digits = 1)
+  ci.lb <- round(rev(ggplot_build(x)$data[[1]]$ymin), digits = 1)
+  ci.ub <- round(rev(ggplot_build(x)$data[[1]]$ymax), digits = 1)
+  n <- x$data %>% group_by(region) %>% summarise(n = n()) %>% select(n)
+  region_summary <- data.frame(region,
+                               mean,
+                               median, 
+                               ci.lb, 
+                               ci.ub,
+                               n) 
+}
+
+(cp_region_summary <- region_cnp_summmary(figa2))
+#        region  mean median ci.lb ci.ub n
+# 1       Polar  86.1   82.6  63.1 125.3 8
+# 2    Subpolar 132.6  134.1  65.5 198.0 131
+# 3 Subtropical 158.5  156.7  91.4 228.5 711
+# 4    Tropical 139.4  135.4  97.5 187.7 445
+(np_region_summary <- region_cnp_summmary(figb2))
+#        region mean median ci.lb ci.ub n 
+# 1       Polar 15.4   14.3  11.7  21.9 8
+# 2    Subpolar 21.2   21.5  13.7  28.6 131
+# 3 Subtropical 23.1   22.8  14.0  32.0 711
+# 4    Tropical 21.0   20.3  14.5  30.2 445
+(cn_region_summary <- region_cnp_summmary(figc2))
+#        region mean median ci.lb ci.ub n 
+# 1       Polar  5.6    5.7   5.0   6.1 8
+# 2    Subpolar  6.3    6.1   5.0   7.3 131
+# 3 Subtropical  6.9    6.9   4.9   8.9 711
+# 4    Tropical  6.7    6.7   4.9   8.5 445
+
+# 2. Other Values used in the paper
+message('Lowest Latitude = ',min(POM_all$Latitude))
+message('Highest Latitude = ',max(POM_all$Latitude))
+message('Oldest year = ',min(POM_all$Year))
+message('Newest year = ',max(POM_all$Year))
+
+# 3. Use segmented package to determine where the linearity between temperature and nutrient breaks
+library(segmented)
+x <- POM_all$SST
+y <- POM_all$NO3_GLODAP
+lin.mod <- lm(y~x)
+segmented.mod <- segmented(lin.mod, seg.Z = ~x, psi=14)
+print(segmented.mod)
+# Call: segmented.lm(obj = lin.mod, seg.Z = ~x, psi = 14)
+# 
+# Meaningful coefficients of the linear terms:
+# (Intercept)            x         U1.x  
+#      28.592       -1.949        1.916  
+# 
+# Estimated Break-Point(s):
+# psi1.x  
+#  14.16  
+
+x <- POM_all$SST
+y <- POM_all$PO4_GLODAP
+lin.mod <- lm(y~x)
+segmented.mod <- segmented(lin.mod, seg.Z = ~x, psi=14)
+print(segmented.mod)
+# Call: segmented.lm(obj = lin.mod, seg.Z = ~x, psi = 14)
+# 
+# Meaningful coefficients of the linear terms:
+# (Intercept)            x         U1.x  
+#      2.0048      -0.1292       0.1289  
+# 
+# Estimated Break-Point(s):
+# psi1.x  
+#  14.51  
+```
+
+## Figure SX: Making SST vs POC, PON, and POP
+```{r}
+
+figa_sst<- 
+  {ggplot(data = POM_all, aes(SST, POCavg)) + 
+      geom_jitter(aes(color = abs(absLatitude)), size = 1.0) + 
+      labs(y = '', x = 'SST (°C)') + 
+      scale_x_continuous(limits = c(-5, 35)) +
+      ylim(0,10) +
+      scale_x_reverse() + 
+      stat_smooth(method = 'gam',fullrange = TRUE, lwd = 1, color = "black") + 
+      scale_color_gradient2(midpoint = 35, low = "red", mid = "gray75",
+                            high = "blue", space = "Lab", name = "Abs Latitude", limits = c(0,70)) +
+      theme_bw() +
+      theme(panel.border = element_rect(color = "black"), 
+            panel.grid.major = element_blank(),
+            legend.key.width = unit(dev.size()[1] / 50, "inches"),
+            legend.title=element_text(size=8))} +
+  coord_flip() +  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank()) 
+figa_sst <- ggplotly(figa_sst)
+
+figb_sst<- 
+  {ggplot(data = POM_all, aes(SST, PONavg)) + 
+      geom_jitter(aes(color = abs(absLatitude)), size = 1.0) + 
+      labs(y = '', x = 'SST (°C)') + 
+      scale_x_continuous(limits = c(-5, 35)) +
+      ylim(0,2) + 
+      scale_x_reverse() + 
+      stat_smooth(method = 'gam',fullrange = TRUE, lwd = 1, color = "black") + 
+      scale_color_gradient2(midpoint = 35, low = "red", mid = "gray75",
+                            high = "blue", space = "Lab", name = "", limits = c(0,70)) +
+      theme_bw() +
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank())} +
+  coord_flip() +  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank()) 
+figb_sst <- ggplotly(figb_sst)
+
+figc_sst<- 
+  {ggplot(data = POM_all, aes(SST, POPavg)) + 
+      geom_jitter(aes(color = abs(absLatitude)), size = 1.0) + 
+      labs(y = '', x = 'SST (°C)') + 
+      scale_x_continuous(limits = c(-5, 35)) +
+      ylim(0,0.15) +
+      scale_x_reverse() + 
+      stat_smooth(method = 'gam',fullrange = TRUE, lwd = 1, color = "black") + 
+      scale_color_gradient2(midpoint = 35, low = "red", mid = "gray75",
+                            high = "blue", space = "Lab", name = "", limits = c(0,70)) +
+      theme_bw() +
+      theme(panel.border = element_rect(color = "black"), 
+            panel.grid.major = element_blank(),
+            legend.key.width = unit(dev.size()[1] / 50, "inches"),
+            legend.title=element_text(size=8))} +
+  coord_flip() +  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank())
+figc_sst <- ggplotly(figc_sst)
+
+## Figure 1b. Box Plot for regional POC, PON, POP
+
+figa2 <- {ggplot(data = POM_all, mapping = aes(y = POCavg, x = region)) + 
+  geom_boxplot(fill = gg_color_hue(3)[3]) + 
+  scale_x_discrete(limits=rev) + 
+    labs(y = 'POC (µM)', x = '') + 
+    stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
+    ylim(0,10) +
+    theme_bw() + 
+    theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} + coord_flip() + theme(axis.text.y = element_text(angle = 45)) 
+figa2_ply <- ggplotly(figa2)
+
+figb2 <- {ggplot(data = POM_all, mapping = aes(y = PONavg, x = region)) + 
+  geom_boxplot(fill = gg_color_hue(3)[2]) + 
+  scale_x_discrete(limits=rev) + 
+    labs(y = 'PON (µM)', x = '') + 
+    stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
+    ylim(0,2) +
+    theme_bw() + 
+    theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} + coord_flip()
+figb2_ply <- ggplotly(figb2)
+
+figc2 <- {ggplot(data = POM_all, mapping = aes(y = POPavg, x = region)) + 
+  geom_boxplot(fill = gg_color_hue(3)[1]) + 
+  scale_x_discrete(limits=rev) + 
+    labs(y = 'POP (µM)', x = '') + 
+    stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
+    ylim(0,0.15) +
+    theme_bw() + 
+    theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} + coord_flip()
+figc2_ply <- ggplotly(figc2)
+
+figS2_sst <-plotly::subplot(figc_sst, figb_sst, figa_sst, figc2_ply,figb2_ply, figa2_ply, nrows = 2, widths = c(0.33,0.34,0.33), shareX = FALSE, shareY = TRUE, titleX = TRUE, titleY = TRUE, margin = 0.01) 
+
+figS2_sst
+
+# Save as pdf using orca 
+
+orca(figS2_sst, 'Figures/FigSX_pom_sst_boxregional.pdf')
+server <- orca_serve()
+server$close()
+unlink('FigS2_pom_sst_boxregional.pdf')
+```
+
+Unimodality in C:P and N:P is due to greater increase in POP compared to POC and PON at temperature above 20 degC and greater decrease in POP from 0 to 20 degC
+
+
+## Figure 2. Pairwise correlation plot next to GAM % deviance plot
+
+### Correlation Matrices Data analyses
+1. Rows are observations (individuals) and columns are variables
+2. Any missing value in the data must be removed or estimated, in our case removed
+3. The data must be standardized (i.e., scaled) to make variables comparable. Standardization consists of transforming the data variables such that they have mean zero and standard deviation one.
+
+```{r}
+# Getting Correlation M
+POM_all_corr <- POM_all %>% dplyr::select(logCP, logNP, logCN,
+                                          absLatitude,   
+                                          SST, 
+                                          logNO3_fill,
+                                          logPO4_fill,
+                                          logFeT,
+                                          Nutcline_GLODAP_1um,
+                                          # Nstar_200_GLODAP,
+                                          MLD_Holte17,
+                                          MLPAR,
+                                          CHLOR_a_MODIS,
+                                          frac_dia_NOBM,
+                                          frac_cya_NOBM,
+                                          sp_Nutlim_CESM2
+                                          ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% drop_na(SST, MLPAR, logNO3_fill, logPO4_fill,sp_Nutlim_CESM2) 
+scaled.POM_all_corr <- data.frame(scale(POM_all_corr[,1:ncol(POM_all_corr)-1]))
+
+# Separate data based on SST (>= 15 and < 15)
+# Since the break point is 15.74 degC, we use 15 deg C as the cutoff line for separating data 
+POM_ge15_corr = filter(POM_all_corr, SST >= 15)
+POM_lt15_corr = filter(POM_all_corr, SST < 15)
+scaled.POM_ge15_corr <- data.frame(scale(POM_ge15_corr[,1:ncol(POM_ge15_corr)-1]))
+scaled.POM_lt15_corr <-data.frame(scale(POM_lt15_corr[,1:ncol(POM_lt15_corr)-1]))
+
+# # Separate data based on latitude (>= 45degrees and < 45 degrees)
+# Nutricline is 0 everywhere so remove nutreincline column in the high lata
+POM_highlat_corr = filter(POM_all_corr, absLatitude >= 45)  
+POM_lowlat_corr = filter(POM_all_corr, absLatitude < 45)
+scaled.POM_highlat_corr <- data.frame(scale(POM_highlat_corr[,1:ncol(POM_highlat_corr)-1]))
+scaled.POM_lowlat_corr <- data.frame(scale(POM_lowlat_corr[,1:ncol(POM_lowlat_corr)-1]))
+
+```
+
+```{r}
+# Correlation M for all
+M.scaled.POM_all_corr <- cor(scaled.POM_all_corr,method = c("pearson"), use = "pairwise.complete.obs")
+M.POM_all_corr_selected <- M.scaled.POM_all_corr[1:3,4:ncol(M.scaled.POM_all_corr)] 
+testRes_all = cor.mtest(scaled.POM_all_corr,method = c("pearson"), use = "pairwise.complete.obs", conf.level = 0.95)
+testRes_selected_all = testRes_all$p[1:3,4:ncol(M.scaled.POM_all_corr)]
+colnames(M.POM_all_corr_selected) <- paste(c("Abs.Latitude",
+                                           "SST","Nitrate","Phosphate", "FeT", 
+                                           "Nutricline", 
+                                           "MLD", "MLPAR", "Chl-a",
+                                           "% Diatoms", "% Cyano"
+                                           ))
+rownames(M.POM_all_corr_selected) <- paste(c("C:P", "N:P", "C:N"))
+
+# Correlation M For SST < 15
+M.scaled.POM_lt15_corr <- cor(scaled.POM_lt15_corr,method = c("pearson"), use = "pairwise.complete.obs")
+M.POM_lt15_corr_selected <- M.scaled.POM_lt15_corr[1:3,4:ncol(M.scaled.POM_lt15_corr)] 
+testRes_lt15 = cor.mtest(scaled.POM_lt15_corr,method = c("pearson"), use = "pairwise.complete.obs", conf.level = 0.95)
+testRes_selected_lt15= testRes_lt15$p[1:3,4:ncol(M.scaled.POM_lt15_corr)]
+colnames(M.POM_lt15_corr_selected) <- paste(c("",
+                                           "","","","",
+                                           "", 
+                                           "", "", "",
+                                           "", ""
+                                           ))
+rownames(M.POM_lt15_corr_selected) <- paste(c("C:P", "N:P", "C:N"))
+
+# Correlation M For High latitude (abs(lat) > 45)
+# For nutricline assign value of 0
+scaled.POM_highlat_corr$Nutcline_GLODAP_1um <- rep(0, length(scaled.POM_highlat_corr$Nutcline_GLODAP_1um))
+M.scaled.POM_highlat_corr <- cor(scaled.POM_highlat_corr,method = c("pearson"), use = "pairwise.complete.obs")
+M.POM_highlat_corr_selected <- M.scaled.POM_highlat_corr[1:3,4:ncol(M.scaled.POM_highlat_corr)] 
+testRes_highlat = cor.mtest(scaled.POM_highlat_corr,method = c("pearson"), use = "pairwise.complete.obs", conf.level = 0.95)
+testRes_selected_highlat= testRes_highlat$p[1:3,4:ncol(M.scaled.POM_highlat_corr)]
+
+colnames(M.POM_highlat_corr_selected) <- paste(c("Abs.Latitude",
+                                           "SST","Nitrate","Phosphate", "FeT", 
+                                           "Nutricline", 
+                                           "MLD", "MLPAR", "Chl-a",
+                                           "% Diatoms", "% Cyano"
+                                           ))
+rownames(M.POM_highlat_corr_selected) <- paste(c("C:P", "N:P", "C:N"))
+
+# Correlation M For SST >= 15
+M.scaled.POM_ge15_corr <- cor(scaled.POM_ge15_corr,method = c("pearson"), use = "pairwise.complete.obs")
+M.POM_ge15_corr_selected <- M.scaled.POM_ge15_corr[1:3,4:ncol(M.scaled.POM_ge15_corr)] 
+testRes_ge15 = cor.mtest(scaled.POM_ge15_corr,method = c("pearson"), use = "pairwise.complete.obs", conf.level = 0.95)
+testRes_selected_ge15= testRes_ge15$p[1:3,4:ncol(M.scaled.POM_ge15_corr)]
+colnames(M.POM_ge15_corr_selected) <- paste(c("",
+                                           "","","","",
+                                           "",
+                                           "", "", "",
+                                           "", ""
+                                           ))
+rownames(M.POM_ge15_corr_selected) <- paste(c("C:P", "N:P", "C:N"))
+
+# Correlation M For Low latitude (abs(lat) <= 45)
+M.scaled.POM_lowlat_corr <- cor(scaled.POM_lowlat_corr,method = c("pearson"), use = "pairwise.complete.obs")
+M.POM_lowlat_corr_selected <- M.scaled.POM_lowlat_corr[1:3,4:ncol(M.scaled.POM_lowlat_corr)] 
+testRes_lowlat = cor.mtest(scaled.POM_lowlat_corr,method = c("pearson"), use = "pairwise.complete.obs", conf.level = 0.95)
+testRes_selected_lowlat= testRes_lowlat$p[1:3,4:ncol(M.scaled.POM_lowlat_corr)]
+colnames(M.POM_lowlat_corr_selected) <- paste(c("",
+                                           "","","","",
+                                           "", 
+                                           "", "", "",
+                                           "", ""
+                                           ))
+rownames(M.POM_lowlat_corr_selected) <- paste(c("C:P", "N:P", "C:N"))
+
+```
+## GAM to to quantify importance of each driver
+### 1. using Nutrient limitation from CESM2 for global and hightlat (Fe limitation throughout) and use metagenomics for mid-to-low latitude
+Since high latitude (absolute latitude > 45) is entirely Fe-limited, we cannot use Nutrient limitation as categorical variable. We therefore use 3 variables only to get deviance explained.
+
+
+```{r}
+# Hightlat and global
+xvar1 <- "SST"
+xvar2 <- "logNO3_fill"  
+# xvar2 <- "MLPAR"
+xvar3 <- "Nutcline_GLODAP_1um"
+xvar4 <- "sp_Nutlim_CESM2"
+
+# C:P and global data
+data = POM_all_gam
+yvar <- "logCP"
+result_cp_all <- deviance4variables_nutlim(xvar1, xvar2, xvar3, xvar4, yvar, data)
+b1_all <- gam(as.formula(paste(yvar, "~", "s(",xvar1,")","+", "s(",xvar2,")","+",
+                           "s(",xvar3,")","+","",xvar4,"")),data = data, method =
+            "REML",na.action = na.omit)
+cp_pvalue_all <- p.adjust(summary(b1_all)$s.table[,4])
+cp_pvalue_all <- ifelse(cp_pvalue_all < 0.001, "***", 
+                        ifelse(cp_pvalue_all < 0.01, "**",
+                               ifelse(cp_pvalue_all < 0.05, "*",
+                                      "")))
+Nutlim_effect_cnp_gam_summary(b1_all)
+ 
+cp_Nutlim_all.frame <-Nutlim_effect_cnp_gam_intercept(b1_all,data)
+
+# N:P and global data
+data = POM_all_gam
+yvar <- "logNP"
+result_np_all <- deviance4variables_nutlim(xvar1, xvar2, xvar3, xvar4, yvar, data)
+b1_all <- gam(as.formula(paste(yvar, "~", "s(",xvar1,")","+", "s(",xvar2,")","+",
+                               "s(",xvar3,")","+","",xvar4,"")),data = data, method =
+                "REML",na.action = na.omit)
+np_pvalue_all <- p.adjust(summary(b1_all)$s.table[,4])
+np_pvalue_all <- ifelse(np_pvalue_all < 0.001, "***", 
+                        ifelse(np_pvalue_all < 0.01, "**",
+                               ifelse(np_pvalue_all < 0.05, "*",
+                                      "")))
+
+Nutlim_effect_cnp_gam_summary(b1_all)
+np_Nutlim_all.frame <-Nutlim_effect_cnp_gam_intercept(b1_all,data)
+
+# C:N and global data
+data = POM_all_gam
+yvar <- "logCN"
+result_cn_all <- deviance4variables_nutlim(xvar1, xvar2, xvar3, xvar4, yvar, data)
+b1_all <- gam(as.formula(paste(yvar, "~", "s(",xvar1,")","+", "s(",xvar2,")","+",
+                               "s(",xvar3,")","+","",xvar4,"")),data = data, method =
+                "REML",na.action = na.omit)
+cn_pvalue_all <- p.adjust(summary(b1_all)$s.table[,4])
+cn_pvalue_all <- ifelse(cn_pvalue_all < 0.001, "***", 
+                        ifelse(cn_pvalue_all < 0.01, "**",
+                               ifelse(cn_pvalue_all < 0.05, "*",
+                                      "")))
+
+Nutlim_effect_cnp_gam_summary(b1_all)
+
+# C:P and high-latitude data (abslat > 45 deg)
+# Use SST and NO3 (2 variables only)
+yvar <- "logCP"
+data = POM_highlat_gam
+result_cp_highlat <- deviance2variables(xvar1, xvar2, yvar, data)
+result_cp_highlat<- R.utils::insert(result_cp_highlat,ats=3,values=c(0,0))
+b1_highlat <- gam(as.formula(paste(yvar, "~", "s(",xvar1,")","+", "s(",xvar2,")")),data = data, method ="REML",na.action = na.omit)
+cp_pvalue_highlat <- p.adjust(summary(b1_highlat)$s.table[,4])
+cp_pvalue_highlat <- ifelse(cp_pvalue_highlat < 0.001, "***", 
+                        ifelse(cp_pvalue_highlat < 0.01, "**",
+                               ifelse(cp_pvalue_highlat < 0.05, "*",
+                                      "")))
+
+# N:P and high-latitude data (abslat > 45 deg)
+# Use SST and NO3 (2 variables only)
+yvar <- "logNP"
+data = POM_highlat_gam
+result_np_highlat <- deviance2variables(xvar1, xvar2, yvar, data)
+result_np_highlat<- R.utils::insert(result_np_highlat,ats=3,values=c(0,0))
+b1_highlat <- gam(as.formula(paste(yvar, "~", "s(",xvar1,")","+", "s(",xvar2,")")),data = data, method ="REML",na.action = na.omit)
+np_pvalue_highlat <- p.adjust(summary(b1_highlat)$s.table[,4])
+np_pvalue_highlat <- ifelse(np_pvalue_highlat < 0.001, "***", 
+                        ifelse(np_pvalue_highlat < 0.01, "**",
+                               ifelse(np_pvalue_highlat < 0.05, "*",
+                                      "")))
+
+# C:N and high-latitude data (abslat > 45 deg)
+# Use SST and NO3 (2 variables only)
+yvar <- "logCN"
+data = POM_highlat_gam
+result_cn_highlat <- deviance2variables(xvar1, xvar2, yvar, data)
+result_cn_highlat<- R.utils::insert(result_cn_highlat,ats=3,values=c(0,0))
+b1_highlat <- gam(as.formula(paste(yvar, "~", "s(",xvar1,")","+", "s(",xvar2,")")),data = data, method ="REML",na.action = na.omit)
+cn_pvalue_highlat <- p.adjust(summary(b1_highlat)$s.table[,4])
+cn_pvalue_highlat <- ifelse(cn_pvalue_highlat < 0.001, "***", 
+                        ifelse(cn_pvalue_highlat < 0.01, "**",
+                               ifelse(cn_pvalue_highlat < 0.05, "*",
+                                      "")))
+```
+
+
+```{r}
+# Low Latitude - use metagenomes based nutrient limitation and model GS
+data = LJU_POM_lowlat_gam
+
+# C:P and low-latitude data (abslat < 45 deg)
+result_cp_lowlat <- deviance4variables_nutlim_modGS_CP(data)
+b1_lowlat <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
+              s(logNO3_fill, bs = "tp", k = 4) +
+              s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
+              s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit)
+
+cp_pvalue_lowlat <- p.adjust(summary(b1_lowlat)$s.table[,4])
+cp_pvalue_lowlat <- ifelse(cp_pvalue_lowlat < 0.001, "***", 
+                        ifelse(cp_pvalue_lowlat < 0.01, "**",
+                               ifelse(cp_pvalue_lowlat < 0.05, "*",
+                                      "")))
+Nutlim_effect_cnp_gam_summary(b1_lowlat)
+cp_Nutlim_lowlat.frame <- Nutlim_effect_cnp_gam_intercept(b1_lowlat,data)
+
+# N:P and low-latitude data (abslat < 45 deg)
+result_np_lowlat <- deviance4variables_nutlim_modGS_NP(data)
+b1_lowlat <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
+              s(logNO3_fill, bs = "tp", k = 4) +
+              s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
+              s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit)
+
+np_pvalue_lowlat <- p.adjust(summary(b1_lowlat)$s.table[,4])
+np_pvalue_lowlat <- ifelse(np_pvalue_lowlat < 0.001, "***", 
+                        ifelse(np_pvalue_lowlat < 0.01, "**",
+                               ifelse(np_pvalue_lowlat < 0.05, "*",
+                                      "")))
+Nutlim_effect_cnp_gam_summary(b1_lowlat)
+np_Nutlim_lowlat.frame <- Nutlim_effect_cnp_gam_intercept(b1_lowlat,data)
+
+# C:N and low-latitude data (abslat < 45 deg)
+result_cn_lowlat <- deviance4variables_nutlim_modGS_CN(data)
+b1_lowlat <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
+              s(logNO3_fill, bs = "tp", k = 4) +
+              s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
+              s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit)
+cn_pvalue_lowlat <- p.adjust(summary(b1_lowlat)$s.table[,4])
+cn_pvalue_lowlat <- ifelse(cn_pvalue_lowlat < 0.001, "***", 
+                        ifelse(cn_pvalue_lowlat < 0.01, "**",
+                               ifelse(cn_pvalue_lowlat < 0.05, "*",
+                                      "")))
+Nutlim_effect_cnp_gam_summary(b1_lowlat)
+cn_Nutlim_lowlat.frame <- Nutlim_effect_cnp_gam_intercept(b1_lowlat,data)
+```
+
+```{r}
+# Saving results as a dataframe
+CNP_Global_nointeract2 <- as.data.frame(cbind(result_cp_all,result_np_all,result_cn_all))
+rownames(CNP_Global_nointeract2) <- c(xvar1, xvar2,xvar3, xvar4,'Total_def','Total_calc')
+colnames(CNP_Global_nointeract2) <- c('C:P', 'N:P','C:N')
+CNP_Global_nointeract_pval2 <- as.data.frame(cbind(cp_pvalue_all,np_pvalue_all,cn_pvalue_all))
+rownames(CNP_Global_nointeract_pval2) <- c(xvar1, xvar2,xvar3)
+colnames(CNP_Global_nointeract_pval2) <- c('C:P', 'N:P','C:N') 
+(round(CNP_Global_nointeract2, digits = 3)) 
+CNP_Global_nointeract_pval2
+
+CNP_highlat_nointeract2 <- as.data.frame(cbind(result_cp_highlat,result_np_highlat,result_cn_highlat))
+rownames(CNP_highlat_nointeract2) <- c(xvar1, xvar2,xvar3, xvar4,'Total','Total_calc')
+colnames(CNP_highlat_nointeract2) <- c('C:P','N:P','C:N')
+CNP_highlat_nointeract_pval2 <- as.data.frame(cbind(cp_pvalue_highlat,np_pvalue_highlat,cn_pvalue_highlat))
+rownames(CNP_highlat_nointeract2) <- c(xvar1, xvar2,xvar3, xvar4,'Total','Total_calc')
+colnames(CNP_highlat_nointeract_pval2) <- c('C:P', 'N:P','C:N') 
+(round(CNP_highlat_nointeract2, digits = 3))
+CNP_highlat_nointeract_pval2
+
+CNP_lowlat_nointeract2 <- as.data.frame(cbind(result_cp_lowlat,result_np_lowlat,result_cn_lowlat))
+rownames(CNP_lowlat_nointeract2) <- c(xvar1, xvar2,xvar3, xvar4,'Total','Total_calc')
+colnames(CNP_lowlat_nointeract2) <- c('C:P','N:P','C:N') 
+CNP_lowlat_nointeract_pval2 <- as.data.frame(cbind(cp_pvalue_lowlat,np_pvalue_lowlat,cn_pvalue_lowlat))
+rownames(CNP_highlat_nointeract2) <- c(xvar1, xvar2,xvar3, xvar4,'Total','Total_calc')
+colnames(CNP_lowlat_nointeract_pval2) <- c('C:P', 'N:P','C:N') 
+(round(CNP_lowlat_nointeract2, digits = 3))
+CNP_lowlat_nointeract_pval2
+```
+
+### Making Figure 2 on gam, correlation summary plots -> Edited and cleaned using illustrator (using Nutrient limitation from CESM2)
+Scale bar chart to 65% in illustrator 
+```{r}
+# pdf(file="Figures/Fig2_cnp_corr_gamdeviance_Nutlim_global.pdf",
+#       width = 6.5, # The width of the plot in inches
+#       height = 4)
+
+par(mfrow=c(1,2))
+fig2a <- corrplot(M.POM_all_corr_selected, p.mat = testRes_selected_all,
+          col = rev(brewer.rdbu(40)),
+          method = "circle", 
+          sig.level = c(0.001, 0.01, 0.05), insig = 'label_sig',pch.cex = 0.7,tl.col="black", tl.srt=45, title = "Global",mar=c(0,0,1,0), na.label = "NA"
+)
+
+fig2b <- barplot(as.matrix(CNP_Global_nointeract2[1:4,]), width = c(0.5,0.5,0.5,0.5), 
+        col = brewer.pal(nrow(CNP_Global_nointeract2[1:4,]), "Set1"),
+        # space=0.04, 
+        font.axis=2,
+        cex.names=0.75,
+        las = 1,
+        legend = c('SST', expression('NO'[3]), 'Nutricline', 'Nutlim'),
+        xlim = c(0, ncol(CNP_Global_nointeract2) + 0.2),
+        ylim = c(0, 0.7),
+        ylab = 'Explained Deviance',
+        # args.legend = list(
+        #   x = ncol(CNP_Global_nointeract)*0.7,
+        #   y = max(colSums(CNP_Global_nointeract2[1:4,])) + 0.05,
+        #   bty = "n", cex=0.75
+        # )
+)
+# dev.off()
+# pdf(file="Figures/Fig2_cnp_corr_gamdeviance_Nutlim_highlowlat.pdf",
+#       width = 5.5, # The width of the plot in inches
+#       height = 4)
+par(mfrow=c(2,2))
+fig2c <- corrplot(M.POM_highlat_corr_selected, p.mat = testRes_selected_highlat,
+          col = rev(brewer.rdbu(40)),
+          method = "circle", 
+          sig.level = c(0.001, 0.01, 0.05), insig = 'label_sig',pch.cex = 0.7,tl.col="black", tl.srt=45, title = "Polar and Subpolar (absLat >= 45)", mar=c(0,0,1,0),na.label = "NA"
+)
+data.frame(round(M.POM_highlat_corr_selected, digits = 2))
+
+fig2d <- barplot(as.matrix(CNP_highlat_nointeract2[1:4,]), width = c(0.5,0.5,0.5,0.5),
+        col = brewer.pal(nrow(CNP_highlat_nointeract2[1:4,]), "Set1"),
+# fig2d <- barplot(as.matrix(CNP_lowlat_nointeract2[1:4,]), width = c(0.5,0.5,0.5,0.5),
+#         col = brewer.pal(nrow(CNP_lowlat_nointeract2[1:4,]), "Set1"),
+#        space=0.04, 
+        font.axis=2,
+        cex.names=0.75,
+        las = 1,
+        legend = c('SST', expression('NO'[3]), 'Nutricline', 'Nutlim'),
+        xlim = c(0, ncol(CNP_highlat_nointeract2) + 0.2),
+        ylim = c(0, 0.7),
+        ylab = 'Explained Deviance',
+        args.legend = list(
+          x = ncol(CNP_highlat_nointeract2)*0.9,
+          y = max(colSums(CNP_highlat_nointeract2[1:4,])) + 0.5,
+          bty = "n", cex=0.75
+        )
+)
+
+fig2e <- corrplot(M.POM_lowlat_corr_selected, p.mat = testRes_selected_lowlat,
+          col = rev(brewer.rdbu(40)),
+          method = "circle", 
+          sig.level = c(0.001, 0.01, 0.05), insig = 'label_sig',pch.cex = 0.7,tl.col="black", tl.srt=45, title = "Subtropical and Tropical (absLat < 45)", mar=c(0,0,1,0),na.label = "NA"
+)
+data.frame(round(M.POM_lowlat_corr_selected, digits = 2))
+
+fig2f <- barplot(as.matrix(CNP_lowlat_nointeract2[1:4,]), width = c(0.5,0.5,0.5,0.5), 
+        col = brewer.pal(nrow(CNP_lowlat_nointeract2[1:4,]), "Set1"),
+#        space=0.04, 
+        font.axis=2,
+        cex.names=0.75,
+        las = 1,
+        legend = c('SST', expression('NO'[3]), 'Nutricline', 'Nutlim'),
+        xlim = c(0, ncol(CNP_highlat_nointeract2)),
+        ylim = c(0, 0.7),
+        ylab = 'Explained Deviance',
+        args.legend = list(
+          x = ncol(CNP_highlat_nointeract2)*0.9,
+          y = max(colSums(CNP_highlat_nointeract2[1:4,])) + 0.5,
+          bty = "n", cex=0.75
+        )
+)
+# dev.off()
+```
+
+
+## Figure 3. Nitrate, SST, and Nutrient limitation dependency and C:N:P scatter and box plot
+# Fig 3abc ver 2- Nitrate vs C:P GAM smoothed
+
+Step 1: Combine LJU_POM_gam with POM_all_gam that has higher absolute latitude of 51
+```{r}
+POM_all_gam_selected <- POM_all_gam
+POM_all_gam_selected$Nutlim <- rep(NA,length(POM_all_gam_selected$sp_Nutlim_CESM2))
+POM_all_gam_selected <- POM_all_gam_selected[POM_all_gam_selected$absLatitude > max(LJU_POM_gam$absLatitude),]
+
+LJU_POM_gam_w_highlat <- rbind(LJU_POM_gam,POM_all_gam_selected)
+```
+
+
+```{r}
+# Reorder factor level in nutrient limitation so P-limiation is plotted last.
+data_all = LJU_POM_gam_w_highlat
+data_all$Nutlim <- factor(data_all$Nutlim,levels = rev(levels(data_all$Nutlim)))
+
+data_all_for_boxplot <- drop_na(data_all, Nutlim)
+
+# GAM model with default parameter setting, no nutrient limitation effect
+mod_CP <- gam(logCP ~ s(logNO3_fill) + s(SST) + s(Nutcline_GLODAP_1um),
+                       data  = data_all, method = "REML", family = "gaussian")
+mod_NP <- gam(logNP ~ s(logNO3_fill) + s(SST) + s(Nutcline_GLODAP_1um),
+                       data  = data_all, method = "REML", family = "gaussian")
+mod_CN <- gam(logCN ~ s(logNO3_fill) + s(SST) + s(Nutcline_GLODAP_1um),
+                       data  = data_all, method = "REML", family = "gaussian")
+```
+
+```{r}
+# Nutricline based predicition with global mean values
+mod_CP_Nutcline_pred <- with(data_all,
+                      expand.grid(Nutcline_GLODAP_1um =seq(min(0), max(300), length=300),
+                                  SST= mean(data_all$SST),
+                                  logNO3_fill = mean(data_all$logNO3_fill)))
+                                  # SST= 18))
+mod_NP_Nutcline_pred <- mod_CP_Nutcline_pred
+mod_CN_Nutcline_pred <- mod_CP_Nutcline_pred
+
+mod_CP_Nutcline_pred <- cbind(mod_CP_Nutcline_pred,
+                       predict(mod_CP, 
+                               mod_CP_Nutcline_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+mod_NP_Nutcline_pred <- cbind(mod_NP_Nutcline_pred,
+                       predict(mod_NP, 
+                               mod_NP_Nutcline_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+mod_CN_Nutcline_pred <- cbind(mod_CN_Nutcline_pred,
+                       predict(mod_CN, 
+                               mod_CN_Nutcline_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+```
+
+```{r}
+# setup prediction data for SST based prediction
+mod_CP_SST_pred <- with(data_all,
+                      expand.grid(SST=seq(min(SST), max(35), length=100),
+                                  Nutcline_GLODAP_1um = mean(data_all$Nutcline_GLODAP_1um),
+                                  logNO3_fill = mean(data_all$logNO3_fill)))
+                                  # logNO3_fill = log(5.7)))
+mod_NP_SST_pred <- mod_CP_SST_pred
+mod_CN_SST_pred <- mod_CP_SST_pred
+
+# make the prediction, add this and a column of standard errors to the prediction
+# data.frame. Predictions are on the log scale.
+mod_CP_SST_pred <- cbind(mod_CP_SST_pred,
+                       predict(mod_CP, 
+                               mod_CP_SST_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+
+mod_NP_SST_pred <- cbind(mod_NP_SST_pred,
+                       predict(mod_NP, 
+                               mod_NP_SST_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+
+mod_CN_SST_pred <- cbind(mod_CN_SST_pred,
+                       predict(mod_CN, 
+                               mod_CN_SST_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+```
+
+```{r}
+# Nitrate model with global mean values
+mod_CP_Nitrate_pred <- with(data_all,
+                      expand.grid(logNO3_fill=seq(min(-6), max(4), length=100),
+                                  Nutcline_GLODAP_1um = mean(data_all$Nutcline_GLODAP_1um),
+                                  SST= mean(data_all$SST)))
+                                  # SST= 18))
+mod_NP_Nitrate_pred <- mod_CP_Nitrate_pred
+mod_CN_Nitrate_pred <- mod_CP_Nitrate_pred
+
+mod_CP_Nitrate_pred <- cbind(mod_CP_Nitrate_pred,
+                       predict(mod_CP, 
+                               mod_CP_Nitrate_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+mod_NP_Nitrate_pred <- cbind(mod_NP_Nitrate_pred,
+                       predict(mod_NP, 
+                               mod_NP_Nitrate_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+mod_CN_Nitrate_pred <- cbind(mod_CN_Nitrate_pred,
+                       predict(mod_CN, 
+                               mod_CN_Nitrate_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+```
+
+```{r}
+# Function to predict C:P under different nutrient limitation under varying SST for a given model and prediction data
+
+mod_CP_pred_func <- function(model,pred_data) {
+  mod_CP_pred <- pred_data
+  mod_CP_pred <- cbind(mod_CP_pred,
+                       predict(model, 
+                               mod_CP_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+}
+
+# Function to predict N:P under different nutrient limitation under varying SST for a given model and prediction data
+
+mod_NP_pred_func <- function(model,pred_data) {
+  mod_NP_pred <- pred_data
+  mod_NP_pred <- cbind(mod_NP_pred,
+                       predict(model, 
+                               mod_NP_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+}
+
+# Function to predict C:N under different nutrient limitation under varying SST for a given model and prediction data
+
+mod_CN_pred_func <- function(model,pred_data) {
+  mod_CN_pred <- pred_data
+  mod_CN_pred <- cbind(mod_CN_pred,
+                       predict(model, 
+                               mod_CN_pred, 
+                               se.fit=TRUE, 
+                               type="response"))
+}
+```
+
+
+```{r}
+fig3a_cp <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logCP))) + 
+  geom_jitter(aes(color = Nutlim), size = 0.6) +   
+  geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x= Nutcline_GLODAP_1um),
+              data=mod_CP_Nutcline_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_CP_Nutcline_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(0,250), ylim = c(75, 275)) + 
+  xlab("") +
+  ylab("C:P") +
+  xlim(0,250) + 
+  ylim(75,275) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.title.x=element_blank(), axis.text.x=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3a_cp_ply <- ggplotly(fig3a_cp)
+
+fig3a_np <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logNP))) +
+  geom_jitter(aes(color = Nutlim), size = 0.6) +   
+  geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x= Nutcline_GLODAP_1um),
+              data=mod_NP_Nutcline_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_NP_Nutcline_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(0,250), ylim = c(10, 40)) + 
+  xlab("") +
+  ylab("N:P") +
+  xlim(0,250) + 
+  ylim(10,40) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.title.x=element_blank(), axis.text.x=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3a_np_ply<- ggplotly(fig3a_np)
+
+fig3a_cn <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logCN))) +
+  geom_jitter(aes(color = Nutlim), size = 0.6) +   
+  geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x= Nutcline_GLODAP_1um),
+              data=mod_CN_Nutcline_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_CN_Nutcline_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(0,250), ylim = c(4, 10)) +
+  xlab("Nutricline (m)") +
+  ylab("C:N") +
+  xlim(-1.0,1.4) + 
+  ylim(4,10) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  +  theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3a_cn_ply <- ggplotly(fig3a_cn)
+
+fig3b_cp <- {ggplot(data = data_all, aes(SST, exp(logCP))) + 
+  geom_jitter(aes(color = Nutlim), size = 0.6) +   
+  geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=SST),
+              data=mod_CP_SST_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_CP_SST_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(0,33), ylim = c(75, 275)) + 
+  xlab("") +
+  ylab("") +
+  xlim(0,33) + 
+  ylim(75,275) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.title.y=element_blank(), axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3b_cp_ply <- ggplotly(fig3b_cp)
+
+fig3b_np <- {ggplot(data = data_all, aes(SST, exp(logNP))) + 
+  geom_jitter(aes(color = Nutlim), size = 0.6) +   
+  geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=SST),
+              data=mod_NP_SST_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_NP_SST_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(0,33), ylim = c(10, 40)) + 
+  xlab("") +
+  ylab("") +
+  xlim(0,33) + 
+  ylim(10,40) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.title.y=element_blank(), axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3b_np_ply <- ggplotly(fig3b_np)
+
+fig3b_cn <- {ggplot(data = data_all, aes(SST, exp(logCN))) + 
+  geom_jitter(aes(color = Nutlim), size = 0.6) +   
+  geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=SST),
+              data=mod_CN_SST_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_CN_SST_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(0,33),ylim = c(4, 10)) + 
+  xlab("SST (°C)") +
+  ylab("") +
+  xlim(0,33) + 
+  ylim(4,10) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) +        
+  theme_bw(base_size = 10) + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  +  theme(axis.title.y=element_blank(), axis.text.y=element_blank(),legend.position = "none")+ scale_color_manual(values=rev(gg_color_hue(4)))
+fig3b_cn_ply <- ggplotly(fig3b_cn)
+
+## Fig 3c- Boxplot for C:N:P with different nutrient limitation type
+fig3c_cp<-{ggplot(data_all_for_boxplot, aes(x=Nutlim, y=exp(logCP), fill=Nutlim)) +
+  geom_boxplot(size = 0.4,outlier.shape = NA) + theme(axis.text.x=element_text(size=rel(2.0)),
+                         axis.text.y=element_text(size=rel(2.0)),
+                         legend.position = "none",
+                         axis.title.x = element_text(size=rel(1.8)),
+                         axis.title.y = element_text(size=rel(1.8))) +
+  xlab("") +
+  ylab("") +
+  scale_x_discrete(labels=c("","","","")) +
+  stat_summary(fun = "mean", geom="point",color = "black",fill="black",size=0.7) +
+  coord_cartesian(ylim = c(75, 275)) + 
+  ylim(75,275) + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} +  theme(axis.title.y=element_blank(), axis.text.y=element_blank()) + theme(legend.position = "none") + scale_fill_manual(values=rev(gg_color_hue(4)))
+fig3c_cp_ply <- ggplotly(fig3c_cp)
+# Remove outlier points
+fig3c_cp_ply$x$data <- lapply(fig3c_cp_ply$x$data, FUN = function(x){
+
+  if (x$type == "box") {
+    x$marker = list(opacity = 0)
+  }
+  return(x)
+})
+
+fig3c_np<-{ggplot(data_all_for_boxplot, aes(x=Nutlim, y=exp(logNP), fill=Nutlim)) +
+  geom_boxplot(size = 0.4, outlier.shape = NA) + theme(axis.text.x=element_text(size=rel(2.0)),
+                         axis.text.y=element_text(size=rel(2.0)),
+                         legend.position = "none",
+                         axis.title.x = element_text(size=rel(1.8)),
+                         axis.title.y = element_text(size=rel(1.8))) +
+  xlab("") +
+  ylab("") +
+  scale_x_discrete(labels=c("","","","")) +
+  stat_summary(fun = "mean", geom="point",color = "black",fill="black",size=0.7) +
+  coord_cartesian(ylim = c(10, 40)) + 
+  ylim(10,40) + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} +  theme(axis.title.y=element_blank(), axis.text.y=element_blank()) + theme(legend.position = "none") + scale_fill_manual(values=rev(gg_color_hue(4)))
+fig3c_np_ply <- ggplotly(fig3c_np)
+# Remove outlier points
+fig3c_np_ply$x$data <- lapply(fig3c_np_ply$x$data, FUN = function(x){
+
+  if (x$type == "box") {
+    x$marker = list(opacity = 0)
+  }
+  return(x)
+})
+
+fig3c_cn<-{ggplot(data_all_for_boxplot, aes(x=Nutlim, y=exp(logCN), fill=Nutlim)) +
+  geom_boxplot(size = 0.4, outlier.shape = NA) + theme(axis.text.x=element_text(size=rel(2.0)),
+                         axis.text.y=element_text(size=rel(2.0)),
+                         legend.position = "none",
+                         axis.title.x = element_text(size=rel(1.8)),
+                         axis.title.y = element_text(size=rel(1.8))) +
+  xlab("Nutrient limitation") +
+  ylab("") +
+  scale_x_discrete(labels=c("Fe","N","P/N","P")) +
+  stat_summary(fun = "mean", geom="point",color = "black",fill="black",size=0.7) +
+  coord_cartesian(ylim = c(4.5, 10)) + 
+  ylim(4,10) + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+} +  theme(axis.title.y=element_blank(), axis.text.y=element_blank()) + theme(legend.position = "none") + scale_fill_manual(values=rev(gg_color_hue(4)))
+fig3c_cn_ply <- ggplotly(fig3c_cn)
+# Remove outlier points
+fig3c_cn_ply$x$data <- lapply(fig3c_cn_ply$x$data, FUN = function(x){
+
+  if (x$type == "box") {
+    x$marker = list(opacity = 0)
+  }
+  return(x)
+})
+
+fig3abc_2 <-plotly::subplot(fig3a_cp_ply, 
+                       fig3b_cp_ply,
+                       fig3c_cp_ply,
+                       fig3a_np_ply, 
+                       fig3b_np_ply,
+                       fig3c_np_ply,
+                       fig3a_cn_ply, 
+                       fig3b_cn_ply,
+                       fig3c_cn_ply,
+                       nrows = 3,
+                       shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE, margin = 0.015,
+                       heights = c(0.33, 0.34, 0.33)) %>% layout(height = 450, width = 450)
+fig3abc_2 
+orca(fig3abc_2, 'Figures/Fig3abc_cnp_nutcline_sst_nutlim.pdf')
+```
+### Modified Figure 3 with Nutrient limitation specific dependencies
+
+```{r}
+mod_CP_pred_Nutcline <- with(data_all,
+                      expand.grid(Nutcline_GLODAP_1um =seq(min(0), max(300), length=300),
+                                  SST= mean(data$SST),
+                                  logNO3_fill = mean(data$logNO3_fill),
+                                  Nutlim=levels(Nutlim)))
+                                  # SST= 18))
+mod_NP_pred_Nutcline <- mod_CP_pred_Nutcline
+mod_CN_pred_Nutcline <- mod_CP_pred_Nutcline
+
+modGS_CP<- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
+                     s(logNO3_fill, bs = "tp", k = 4) +
+                    s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
+                         s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+                       data = data_all, method = "REML", family = "gaussian")
+modGS_CP_pred_Nutcline <- mod_CP_pred_func(modGS_CP,mod_CP_pred_Nutcline)
+
+modGS_NP<- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
+                     s(logNO3_fill, bs = "tp", k = 4) +
+                    s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
+                         s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+                       data = data_all, method = "REML", family = "gaussian")
+modGS_NP_pred_Nutcline <- mod_NP_pred_func(modGS_NP,mod_NP_pred_Nutcline)
+
+modGS_CN<- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
+                     s(logNO3_fill, bs = "tp", k = 4) +
+                    s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
+                         s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+                       data = data_all, method = "REML", family = "gaussian")
+modGS_CN_pred_Nutcline <- mod_CN_pred_func(modGS_CN,mod_CN_pred_Nutcline)
+
+```
+```{r}
+fig3a_cp2 <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logCP))) + 
+  geom_jitter(aes(color = Nutlim), size = 0.45, alpha = 1.0) +   
+  geom_line(aes(x = Nutcline_GLODAP_1um, y=exp(fit), group = Nutlim, color = Nutlim), data=modGS_CP_pred_Nutcline, cex = 0.75) + 
+  coord_cartesian(xlim = c(0,210), ylim = c(60, 255)) + 
+  xlab("") +
+  ylab("") +
+  xlim(0,210) + 
+  ylim(60,255) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
+                   labels = c(75, 100, 125, 150, 175, 200, 225)) + 
+  theme_bw(base_size = 8, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.title.y=element_blank(), axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3a_cp_ply2 <- ggplotly(fig3a_cp2)
+
+fig3a_np2 <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logNP))) +
+  geom_jitter(aes(color = Nutlim), size = 0.45, alpha = 1.0) +   
+  geom_line(aes(x = Nutcline_GLODAP_1um, y=exp(fit), group = Nutlim, color = Nutlim), data=modGS_NP_pred_Nutcline, cex = 0.75) + 
+  coord_cartesian(xlim = c(0,210), ylim = c(10, 36)) + 
+  xlab("") +
+  ylab("") +
+  xlim(0,210) + 
+  ylim(10,36) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  scale_y_continuous(breaks = c(12, 16, 20, 24, 28,32),
+                   labels = c(12, 16, 20, 24, 28,32)) +      
+  theme_bw(base_size = 8, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.title.y=element_blank(), axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3a_np_ply2<- ggplotly(fig3a_np2)
+
+fig3a_cn2 <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logCN))) +
+  geom_jitter(aes(color = Nutlim), size = 0.45, alpha = 1.0) +   
+  geom_line(aes(x = Nutcline_GLODAP_1um, y=exp(fit), group = Nutlim, color = Nutlim), data=modGS_CN_pred_Nutcline, cex = 0.75) + 
+  coord_cartesian(xlim = c(0,210), ylim = c(5, 9.0)) +
+  xlab("Nutricline (m)") +
+  ylab("") +
+  xlim(0,210) + 
+  ylim(5,9.0) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  theme_bw(base_size = 8, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3a_cn_ply2 <- ggplotly(fig3a_cn2)
+
+fig3b_cp2 <- {ggplot(data = data_all, aes(SST, exp(logCP))) + 
+  geom_jitter(aes(color = Nutlim), size = 0.45) +   
+  geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=SST),
+              data=mod_CP_SST_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_CP_SST_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(0,33), ylim = c(60, 255)) + 
+  xlab("") +
+  ylab("C:P") +
+  xlim(0,33) + 
+  ylim(60,255) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
+                   labels = c(75, 100, 125, 150, 175, 200, 225)) + 
+  theme_bw(base_size = 8, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.title.x=element_blank(), axis.text.x=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3b_cp_ply2 <- ggplotly(fig3b_cp2)
+
+fig3b_np2 <- {ggplot(data = data_all, aes(SST, exp(logNP))) + 
+  geom_jitter(aes(color = Nutlim), size = 0.45) +   
+  geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=SST),
+              data=mod_NP_SST_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_NP_SST_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(0,33), ylim = c(10, 36)) + 
+  xlab("") +
+  ylab("N:P") +
+  xlim(0,33) + 
+  ylim(10,36) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  scale_y_continuous(breaks = c(12, 16, 20, 24, 28,32),
+                   labels = c(12, 16, 20, 24, 28,32)) +       
+  theme_bw(base_size = 8, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.title.x=element_blank(), axis.text.x=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3b_np_ply2 <- ggplotly(fig3b_np2)
+
+fig3b_cn2 <- {ggplot(data = data_all, aes(SST, exp(logCN))) + 
+  geom_jitter(aes(color = Nutlim), size = 0.45) +   
+  geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=SST),
+              data=mod_CN_SST_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_CN_SST_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(0,33),ylim = c(5, 9.0)) + 
+  xlab("SST (°C)") +
+  ylab("C:N") +
+  xlim(0,33) + 
+  ylim(5,9.0) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) +        
+  theme_bw(base_size = 8) + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3b_cn_ply2 <- ggplotly(fig3b_cn2)
+
+# Nitrate based prediction
+fig3d_cp <- {ggplot(data = data_all, aes(log10(exp(logNO3_fill)), exp(logCP))) + 
+  geom_jitter(aes(color = Nutlim), size = 0.45) +   
+  geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=log10(exp(logNO3_fill))),
+              data=mod_CP_Nitrate_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_CP_Nitrate_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(-1.0,1.5), ylim = c(60, 255)) + 
+  xlab("") +
+  ylab("") +
+  xlim(-1.0,1.5) + 
+  ylim(60,255) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
+                   labels = c(75, 100, 125, 150, 175, 200, 225)) +     
+  theme_bw(base_size = 8, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3d_cp_ply <- ggplotly(fig3d_cp)
+
+fig3d_np <- {ggplot(data = data_all, aes(log10(exp(logNO3_fill)), exp(logNP))) + 
+  geom_jitter(aes(color = Nutlim), size = 0.45) +   
+  geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=log10(exp(logNO3_fill))),
+              data=mod_NP_Nitrate_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_NP_Nitrate_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(-1.0,1.5), ylim = c(10, 36)) + 
+  xlab("") +
+  ylab("") +
+  xlim(-1.0,1.5) + 
+  ylim(10,36) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  scale_y_continuous(breaks = c(12, 16, 20, 24, 28, 32),
+                   labels = c(12, 16, 20, 24, 28, 32)) +       
+  theme_bw(base_size = 8, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3d_np_ply <- ggplotly(fig3d_np)
+
+# Tease it so that the shading does not go below C:N of 5 for display
+cn_shade_min <- exp(mod_CN_Nitrate_pred$fit - 2*mod_CN_Nitrate_pred$se.fit)
+cn_shade_min <- pmax(cn_shade_min,rep(5,length(cn_shade_min)))
+
+fig3d_cn <- {ggplot(data = data_all, aes(log10(exp(logNO3_fill)), exp(logCN))) + 
+  geom_jitter(aes(color = Nutlim), size = 0.45) +   
+  # geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=log10(exp(logNO3_fill))),
+  geom_ribbon(aes(ymin=cn_shade_min, ymax=exp(fit +2*se.fit), x=log10(exp(logNO3_fill))),
+              data=mod_CN_Nitrate_pred, 
+              alpha=0.4, 
+              inherit.aes=FALSE) +
+  geom_line(aes(y=exp(fit)), data=mod_CN_Nitrate_pred, cex = 0.75)+ 
+  coord_cartesian(xlim = c(-1.0, 1.5),ylim = c(5, 9.0)) + 
+  # labs(x = bquote(log[10]~'['~NO[3]~'('*mu~'M)]')) + 
+  xlab("log10[NO3]") +
+  ylab("") +
+  xlim(-1.0,1.5) + 
+  ylim(5,9.0) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  theme_bw(base_size = 8, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+fig3d_cn_ply <- ggplotly(fig3d_cn)
+
+fig3abd_3 <-plotly::subplot(fig3b_np_ply2, 
+                       fig3d_np_ply,
+                       fig3a_np_ply2,
+                       fig3b_cn_ply2, 
+                       fig3d_cn_ply,
+                       fig3a_cn_ply2,
+                       nrows = 2,
+                       shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE, margin = 0.015,
+                       heights = c(0.5, 0.5)) %>% layout(height = 300, width = 450)
+fig3abd_3 
+orca(fig3abd_3, 'Figures/Fig3abc_cnp_nutcline_sst_nutlim_3.pdf')
+
+fig3abd_4 <-plotly::subplot(fig3b_cp_ply2, 
+                       fig3d_cp_ply,
+                       fig3a_cp_ply2,
+                       fig3b_cn_ply2, 
+                       fig3d_cn_ply,
+                       fig3a_cn_ply2,
+                       nrows = 2,
+                       shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE, margin = 0.015,
+                       heights = c(0.5, 0.5)) %>% layout(height = 300, width = 450)
+fig3abd_4
+orca(fig3abd_4, 'Figures/Fig3abc_cnp_nutcline_sst_nutlim_4.pdf')
+
+fig3abd_5 <-plotly::subplot(fig3b_cp_ply2, 
+                       fig3d_cp_ply,
+                       fig3a_cp_ply2,
+                       fig3b_np_ply2, 
+                       fig3d_np_ply,
+                       fig3a_np_ply2,
+                       fig3b_cn_ply2, 
+                       fig3d_cn_ply,
+                       fig3a_cn_ply2,
+                       nrows = 3,
+                       shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE, margin = 0.015,
+                       heights = c(0.33, 0.34, 0.33)) %>% layout(height = 300, width = 450)
+fig3abd_5
+orca(fig3abd_5, 'Figures/Fig3abc_cnp_nutcline_sst_nutlim_5.pdf')
+
+```
+```{r}
+# Dummy file for creating legends
+fig3a_cp3 <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logCP))) + 
+  geom_jitter(aes(color = Nutlim), size = 1.0, alpha = 1.0) +   
+  # geom_line(aes(x = Nutcline_GLODAP_1um, y=exp(fit), group = Nutlim, color = Nutlim), data=modGS_CP_pred_Nutcline, cex = 0.75) + 
+  coord_cartesian(xlim = c(0,210), ylim = c(100, 250)) + 
+  xlab("") +
+  ylab("") +
+  xlim(0,210) + 
+  ylim(100,250) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+}  + theme(axis.title.x=element_blank(), axis.text.x=element_blank()) + 
+  theme(legend.position = "top", legend.box = "horizontal",legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) + scale_color_manual(values=rev(gg_color_hue(4)))
+
+ggsave("Figures/Fig3_forlegend.pdf",
+        width = 8, # The width of the plot in inches
+        height = 5)
+```
+
+
+```{r}
+# Mean C:N:P for different nutrient limitation types - extract values from box plot used in Figure 3
+## Function to extract values from ggbox plot
+nutlim_cnp_summmary <- function(x) {
+  Nutlim <- c("Fe-lim","N-lim","PN-colim","P-lim")
+  mean <- round((ggplot_build(x)$data[[2]]$y), digits = 1)
+  median <- round((ggplot_build(x)$data[[1]]$middle),digits = 1)
+  ci.lb <- round((ggplot_build(x)$data[[1]]$ymin), digits = 1)
+  ci.ub <- round((ggplot_build(x)$data[[1]]$ymax), digits = 1)
+  n <- x$data %>% group_by(Nutlim) %>% summarise(n = n()) %>% select(n)
+  nutlim_summary <- data.frame(Nutlim,
+                               mean,
+                               median, 
+                               ci.lb, 
+                               ci.ub,
+                               n) 
+}
+
+(cp_nutlim_summary <- nutlim_cnp_summmary(fig3c_cp))
+cp_nutlim_summary
+#     Nutlim  mean median ci.lb ci.ub   n
+# 1   Fe-lim 138.9  134.0 103.0 177.2  85
+# 2    N-lim 145.5  141.8  99.2 199.6 195
+# 3 PN-colim 133.8  130.1 108.0 153.6  65
+# 4    P-lim 156.4  145.4  95.9 251.9 121
+
+# Calulating Tukey HSD using glhm function
+summary(cp_nutlim <- aov(logCP~ Nutlim, data = LJU_POM_lowlat_gam))
+cp_nutlim_diff <- TukeyHSD(cp_nutlim, "Nutlim", ordered = FALSE)
+(cp_nutlim_diff <- as.data.frame(round(cp_nutlim_diff$Nutlim,digits = 3)))
+
+# $Nutlim
+#                         diff          lwr          upr     p adj
+# PN-colim-P-lim  -0.129809038 -0.206958454 -0.052659621 0.0001046
+# N-lim-P-lim     -0.051318828 -0.110121414  0.007483759 0.1114573
+# Fe-lim-P-lim    -0.057161589 -0.131471634  0.017148456 0.1956350
+# N-lim-PN-colim   0.078490210  0.006056748  0.150923672 0.0277078
+# Fe-lim-PN-colim  0.072647448 -0.012856031  0.158150928 0.1272557
+# Fe-lim-N-lim    -0.005842761 -0.075244179  0.063558656 0.9963818
+
+(np_nutlim_summary <- nutlim_cnp_summmary(fig3c_np))
+#     Nutlim mean median ci.lb ci.ub   n
+# 1   Fe-lim 21.3   21.3  12.9  28.6  85
+# 2    N-lim 20.2   19.7  14.8  25.2 195
+# 3 PN-colim 19.2   18.6  15.4  23.0  65
+# 4    P-lim 22.7   21.0  15.0  36.7 121
+
+summary(np_nutlim <- aov(logNP~ Nutlim, data = LJU_POM_lowlat_gam))
+np_nutlim_diff <- TukeyHSD(np_nutlim, "Nutlim", ordered = FALSE)
+(np_nutlim_diff <- as.data.frame(round(np_nutlim_diff$Nutlim,digits = 3)))
+# $Nutlim
+#                        diff          lwr         upr     p adj
+# PN-colim-P-lim  -0.15990637 -0.239152449 -0.08066030 0.0000018
+# N-lim-P-lim     -0.11210577 -0.172506408 -0.05170513 0.0000138
+# Fe-lim-P-lim    -0.04666029 -0.122989829  0.02966925 0.3930978
+# N-lim-PN-colim   0.04780061 -0.026601350  0.12220256 0.3479484
+# Fe-lim-PN-colim  0.11324608  0.025418911  0.20107325 0.0052794
+# Fe-lim-N-lim     0.06544548 -0.005842034  0.13673299 0.0849321
+
+(cn_nutlim_summary <- nutlim_cnp_summmary(fig3c_cn))
+#     Nutlim mean median ci.lb ci.ub   n
+# 1   Fe-lim  6.5    6.1   5.3   8.2  85
+# 2    N-lim  7.3    7.2   5.1   9.3 195
+# 3 PN-colim  7.0    7.1   5.8   8.2  65
+# 4    P-lim  6.8    6.9   5.4   8.2 121
+
+summary(cn_nutlim <- aov(logCN~ Nutlim, data = LJU_POM_lowlat_gam))
+cn_nutlim_diff <- TukeyHSD(cn_nutlim, "Nutlim", ordered = FALSE)
+(cn_nutlim_diff <- as.data.frame(round(cn_nutlim_diff$Nutlim,digits = 3)))
+# $Nutlim
+#                        diff         lwr         upr     p adj
+# PN-colim-P-lim   0.02756388 -0.02984054  0.08496830 0.6027421
+# N-lim-P-lim      0.05826728  0.01451415  0.10202041 0.0036261
+# Fe-lim-P-lim    -0.01302096 -0.06831269  0.04227077 0.9297194
+# N-lim-PN-colim   0.03070340 -0.02319203  0.08459883 0.4570482
+# Fe-lim-PN-colim -0.04058484 -0.10420525  0.02303557 0.3543636
+# Fe-lim-N-lim    -0.07128824 -0.12292762 -0.01964886 0.0023183
+
+```
+
+```{r}
+## Fig 3 top: Global Map of Nutrient Limitation (as Ustick et al. 2021)
+# library(oce)
+# library(ocedata)
+# library(RColorBrewer)
+# data("coastlineWorld")
+
+# Make a map and save as pdf -> edited with illustrator
+# pdf(file="Figures/Fig3a_Nutlim_map.pdf",
+#         width = 8, # The width of the plot in inches
+#         height = 5)
+
+# par(mar=c(1.5, 1, 1.5, 1))
+# lonlim <- c(-180, 180)
+# latlim <- c(-90, 90)
+# 
+# Col = gg_color_hue(4)
+# cm <- colormap(as.numeric(LJU_POM$Nutlim),
+#                col0=Col, col1=Col,
+#                x0=c(1, 2, 3, 4), x1=c(2, 3, 4, 5))
+# drawPalette(colormap=cm, at = seq(1.5,5.5,1.0),
+#             labels = c("P", "P/N", "N", "Fe", "Null"))
+# 
+# mapPlot(coastlineWorld, 
+#         projection="+proj=robin",
+#         col="black", 
+#         longitudelim=lonlim, 
+#         latitudelim=latlim, 
+#         axes = TRUE,
+#         drawBox = FALSE,
+#         grid = FALSE,
+#         clip = TRUE,
+#         border = "black",
+#         lonlabels = TRUE,
+#         latlabels = TRUE,
+#         geographical = 0,
+#         axisStyle = 1)
+# 
+# mapGrid(
+#   dlongitude = 360,
+#   dlatitude = 180,
+#   col = "black",
+#   lty = "solid",
+#   lwd = 0.5 * par("lwd"),
+#   polarCircle = 0,
+#   debug = getOption("oceDebug")
+# )
+# 
+# # Plotting All POM Stations in gray
+# mapPoints(POM_all$Longitude, POM_all$Latitude, pch = 21, col = "gray", bg = "gray", cex = 0.75,lwd = 0.0)
+# 
+# # Overlaying Stations with metagenomne
+#  mapPoints(LJU_POM$Longitude, LJU_POM$Latitude, pch = 21, col = cm$zcol, bg = cm$zcol, cex = 0.75,lwd = 0.0)
+# # dataLJU_POM_orig
+# # Adding Latitude and Longitde symbols
+# mapText(-180, -90, "90°S", col="black", cex = 1.0)
+# mapText(-180, -45, "45°S", col="black", cex = 1.0)
+# mapText(-180, 0, "0°", col="black", cex = 1.0)
+# mapText(-180, 45, "45°N", col="black", cex = 1.0)
+# mapText(-180, 90, "90°N", col="black", cex = 1.0)
+# 
+# mapText(-90, -95, "90°W", col="black", cex = 1.0)
+# mapText(90, -95, "90°E", col="black", cex = 1.0)
+# mapText(0, -95, "180°E", col="black", cex = 1.0)
+
+# dev.off()
+```
+### Projecting C:N:P with CESM model outputs
+
+#### Loading CESM output
+```{r}
+library(ncdf4)
+library(ncdf4.helpers)
+
+cesm_filepath <- paste0("~/Desktop/Project/Simons_Martiny/POM_Global/POM_global_analysis/Model_Data_comparison/CESM2_lens/ensmean_ncfiles")
+sst_cesm_historic <- nc_open(file.path(cesm_filepath, paste('TEMP_regrid_historic.nc',  sep="")))
+nutcline_cesm_historic <- nc_open(file.path(cesm_filepath, paste('Nutcline_regrid_historic.nc',  sep="")))
+nutlim_cesm_historic <- nc_open(file.path(cesm_filepath, paste('sp_Nut_lim_surf_historic.nc',  sep="")))
+nitrate_cesm_historic <- nc_open(file.path(cesm_filepath, paste('NO3_regrid_historic.nc',  sep="")))
+nutlim_cesm_historic <- nc_open(file.path(cesm_filepath, paste('sp_Nut_lim_surf_historic.nc',  sep="")))
+
+sst_cesm_SSP370 <- nc_open(file.path(cesm_filepath, paste('TEMP_regrid_SSP370.nc',  sep="")))
+nutcline_cesm_SSP370 <- nc_open(file.path(cesm_filepath, paste('Nutcline_regrid_SSP370.nc',  sep="")))
+nitrate_cesm_SSP370 <- nc_open(file.path(cesm_filepath, paste('NO3_regrid_SSP370.nc',  sep="")))
+nutlim_cesm_SSP370 <- nc_open(file.path(cesm_filepath, paste('sp_Nut_lim_surf_SSP370.nc',  sep="")))
+
+# Get latitude and longitude information for CESM output
+# Make masks based on latitude
+lon <- ncvar_get(sst_cesm_historic, varid = "lon")
+lat <- ncvar_get(sst_cesm_historic, varid = "lat")
+
+lonlat_tropical_mask <- outer(rep(1,length(lon)), ifelse(abs(lat) < 15, 1, 0))
+lonlat_Subtropical_mask <- outer(rep(1,length(lon)), ifelse(abs(lat) >= 15 & abs(lat) < 45, 1, 0))
+lonlat_Subpolar_mask <- outer(rep(1,length(lon)), ifelse(abs(lat) >= 45 & abs(lat) < 65, 1, 0))
+lonlat_polar_mask <- outer(rep(1,length(lon)),  ifelse(abs(lat) >= 65, 1, 0))
+
+lonlat_vector_mask <- lonlat_tropical_mask*1 + lonlat_Subtropical_mask*2 + 
+  lonlat_Subpolar_mask*3 + lonlat_polar_mask*4
+
+lonlat_regions <- lonlat_vector_mask
+lonlat_regions[lonlat_regions == 1] <- "Tropical"
+lonlat_regions[lonlat_regions == 2] <- "Subtropical"
+lonlat_regions[lonlat_regions == 3] <- "Subpolar"
+lonlat_regions[lonlat_regions == 4] <- "Polar"
+
+# Separating highlat and low lat
+lonlat_large_regions <- lonlat_regions
+lonlat_large_regions[lonlat_large_regions == "Subpolar" | lonlat_large_regions == "Polar"] <- "Highlat"
+lonlat_large_regions[lonlat_large_regions == "Tropical" | lonlat_large_regions == "Subtropical"] <- "Midlowlat"
+
+lonlat_grid <- outer(lon, lat, FUN = "paste")
+lonlat_grid_lat <- outer(rep(1,length(lon)), lat)
+lonlat_grid_lon <- outer(lon, rep(1, length(lat)))
+
+# Calculate weights based on area
+# For a rectangular grid the cosine of the latitude is proportional to the grid cell area
+area_weights = cos(deg2rad(lonlat_grid_lat))
+
+# Getting Variables and its intramodel variance
+sst_surf_historic <- ncvar_get(sst_cesm_historic, varid = "TEMP")
+sst_surf_SSP370 <- ncvar_get(sst_cesm_SSP370, varid = "TEMP")
+nutcline_historic <- ncvar_get(nutcline_cesm_historic, varid = "Nutcline")
+nutcline_SSP370 <- ncvar_get(nutcline_cesm_SSP370, varid = "Nutcline")
+nutlim_historic <- (ncvar_get(nutlim_cesm_historic, varid = "sp_Nut_lim_surf_historic"))
+nutlim_SSP370 <- ncvar_get(nutlim_cesm_SSP370, varid = "sp_Nut_lim_surf_SSP370")
+nitrate_surf_historic <- ncvar_get(nitrate_cesm_historic, varid = "NO3")
+nitrate_surf_SSP370 <- ncvar_get(nitrate_cesm_SSP370, varid = "NO3")
+
+# Make Latitudinal mask (no longer necessary as we are using GAM model trained with the global POM dataset)
+# Multiply nutricline by 1.54 for correcting for underestimation
+
+lonlat_model_mask <- outer(rep(1,length(lon)), ifelse(abs(lat) < 55, 1, NA))
+lat_mask <- which(abs(lat) > 55)
+nutcline_correction <- 1.54
+
+# Set threshold minimum of 0.1 uM for nitrate
+nitrate_surf_historic <- ifelse(nitrate_surf_historic < 0.1, 0.1, nitrate_surf_historic)
+nitrate_surf_SSP370<- ifelse(nitrate_surf_SSP370 < 0.1, 0.1, nitrate_surf_SSP370)
+
+# Correct nutricline depth by multiplying it by 1.54
+nutcline_historic <- nutcline_historic*nutcline_correction
+nutcline_SSP370 <- nutcline_SSP370*nutcline_correction
+```
+
+### Figure SX top (version 2): SP Nutrient limitation (historic), with observation overlaid
+```{r}
+scale_fill_fermenter_custom <- function(pal, na.value = "grey50", guide = "coloursteps", aesthetics = "fill", ...) {
+  binned_scale("fill", "fermenter", ggplot2:::binned_pal(scales::manual_pal(unname(pal))), na.value = na.value, guide = guide, ...)  
+}
+```
+
+```{r}
+# Observational Plots to overlay model Nutrient Limitation
+POM_all_binned_selected <- POM_all_binned
+POM_all_binned_selected $Nutlim <- rep(NA,length(POM_all_binned_selected$sp_Nutlim_CESM2))
+POM_all_binned_selected <- POM_all_binned_selected[POM_all_binned_selected$absLatitude > max(LJU_POM_binned$absLatitude),]
+
+LJU_POM_binned_w_highlat <- rbind(LJU_POM_binned,POM_all_binned_selected)
+
+# Left = Nutrient Limitation in 2010-2014 with observation overlaid
+
+nutlim_historic_plot <- reshape2::melt(nutlim_historic)
+nutlim_historic_plot$lon <- as.vector(lonlat_grid_lon)
+nutlim_historic_plot$lat <- as.vector(lonlat_grid_lat)
+pal <- alpha(gg_color_hue(4),0.8)
+
+fig_left <- ggplot(data = nutlim_historic_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("Longitude") + 
+  ylab("Latitude") + 
+  scale_fill_fermenter_custom(pal,
+                              na.value = "black",
+                              limits = c(0, 4),
+                              breaks = seq(1, 4 ,1.0),
+                              labels = c("P","P/N","N","Fe"), guide = "none") +
+  geom_point(data = LJU_POM_binned_w_highlat, aes(x = Longitude, y = Latitude, color = Nutlim), size = 0.6,show.legend = T) + 
+  ggtitle("(A) SP Nutrient limitation (2010s)") + 
+  theme_bw(base_size = 10, base_family = "Helvetica") +
+  theme(legend.position = "bottom", legend.box = "horizontal",legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid'),legend.key.size = unit(0.3, "cm")) + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  # guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75, title = "", title.position = "bottom"))
+
+fig_left
+
+# Right = Nutrient Limitation in SSP370
+nutlim_SSP370_plot <- reshape2::melt(nutlim_SSP370)
+nutlim_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+nutlim_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+pal <- alpha(gg_color_hue(4),0.8)
+
+fig_right <- ggplot(data = nutlim_SSP370_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("Longitude") + 
+  ylab("Latitude") + 
+  scale_fill_fermenter_custom(pal,
+                              na.value = "black",
+                              limits = c(0, 4),
+                              breaks = seq(1, 4 ,1.0),
+                              labels = c("P","P/N","N","Fe"), guide = "none") +
+  geom_point(data = LJU_POM_binned_w_highlat, aes(x = Longitude, y = Latitude, color = Nutlim), size = 0.6,show.legend = T, alpha = 0.0) + 
+  ggtitle("(B) SP Nutrient limitation (2090s)") + 
+  theme_bw(base_size = 10, base_family = "Helvetica") +
+  theme(legend.position = "bottom", legend.box = "horizontal",legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid'),legend.key.size = unit(0.3, "cm")) + 
+  theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  # guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75, title = "", title.position = "bottom"))
+
+fig_right
+
+# Convert the figures to grobs
+fig_left_grob <- ggplotGrob(fig_left)
+fig_right_grob <- ggplotGrob(fig_right)
+gg <- ggplot() +
+  coord_equal(xlim = c(1, 10), ylim = c(1, 6), expand = F) +
+    annotation_custom(fig_left_grob,
+                      xmin = 1, xmax = 5.5, ymin = 1, ymax = 6) +  
+      annotation_custom(fig_right_grob,
+                      xmin = 5.5, xmax = 10, ymin = 1, ymax = 6) + 
+    theme(panel.border = element_blank())
+gg
+ggsave("Figures//FigSX_Nutlim_map_wCESM_historic_ssp370.pdf",
+        width = 8, # The width of the plot in inches
+        height = 5)
+
+```
+
+### Figure Sx (Plotting Changes in SST, Nitrate, and Nutricline from CESM)
+
+```{r}
+# Top Left (3,3,1) = SST in 2010s
+sst_historic_plot <- reshape2::melt(sst_surf_historic)
+sst_historic_plot$lon <- as.vector(lonlat_grid_lon)
+sst_historic_plot$lat <- as.vector(lonlat_grid_lat)
+
+fig_331 <- ggplot(data = sst_historic_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("") + 
+  ylab("") + 
+  scale_fill_fermenter(palette = "Spectral",
+                              na.value = "gray30",
+                              limits = c(-5, 37),
+                              breaks = seq(-5, 35 , 5)) +
+  ggtitle("(A) SST (2010s)") + 
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "gray30"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "°C", title.position = "top"))
+
+fig_331
+
+# Top Middle (3,3,2) = SST in 2090s
+sst_SSP370_plot <- reshape2::melt(sst_surf_SSP370)
+sst_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+sst_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+
+fig_332 <- ggplot(data = sst_SSP370_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("") + 
+  ylab("") + 
+  scale_fill_fermenter(palette = "Spectral",
+                              na.value = "gray30",
+                              limits = c(-5, 37),
+                              breaks = seq(-5, 35 , 5)) +
+  ggtitle("(B) SST (2090s)") + 
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "°C", title.position = "top"))
+
+fig_332
+
+# Top Right (3,3,3) = DSST (2090s-2010s)
+sst_diffSSP370hist_plot <- sst_SSP370_plot - sst_historic_plot
+sst_diffSSP370hist_plot$lon <- as.vector(lonlat_grid_lon)
+sst_diffSSP370hist_plot$lat <- as.vector(lonlat_grid_lat)
+
+fig_333 <- ggplot(data = sst_diffSSP370hist_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("") + 
+  ylab("") + 
+  scale_fill_fermenter(palette = "RdBu",
+                              na.value = "gray30",
+                              limits = c(-5, 5),
+                              breaks = seq(-4, 4 , 1)) +
+  ggtitle("(C) DSST (2090s-2010s)") + 
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "°C", title.position = "top"))
+
+fig_333
+
+# Middle Left (3,3,4) = NO3 in 2010s
+nitrate_historic_plot <- reshape2::melt(nitrate_surf_historic)
+nitrate_historic_plot$lon <- as.vector(lonlat_grid_lon)
+nitrate_historic_plot$lat <- as.vector(lonlat_grid_lat)
+pal = cmocean("delta")(15)
+fig_334 <- ggplot(data = nitrate_historic_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("") + 
+  ylab("") + 
+  scale_fill_gradientn(colors = pal, 
+                              na.value = "gray30",
+                      limits = c(0, 28),
+                      breaks = c(0,1,2,4,6,8,10,12,14,16,18,20,22,24)) +
+  ggtitle("(D) NO3 (2010s)") + 
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "uM", title.position = "top",show.limits = T))
+
+fig_334
+
+# Middle Middle (3,3,5) = NO3 in 2090s
+nitrate_SSP370_plot <- reshape2::melt(nitrate_surf_SSP370)
+nitrate_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+nitrate_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+pal = cmocean("delta")(15)
+
+fig_335 <- ggplot(data = nitrate_SSP370_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("") + 
+  ylab("") + 
+  scale_fill_gradientn(colors = pal, 
+                              na.value = "gray30",
+                      limits = c(0, 28),
+                      breaks = c(0,1,2,4,6,8,10,12,14,16,18,20,22,24)) +
+  ggtitle("(E) NO3 (2090s)") + 
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "uM", title.position = "top",show.limits = T))
+
+fig_335
+
+# Middle Right (3,3,6) = DNO3 (2090s-2010s)
+nitrate_diffSSP370hist_plot <- nitrate_SSP370_plot - nitrate_historic_plot
+nitrate_diffSSP370hist_plot$lon <- as.vector(lonlat_grid_lon)
+nitrate_diffSSP370hist_plot$lat <- as.vector(lonlat_grid_lat)
+
+fig_336 <- ggplot(data = nitrate_diffSSP370hist_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("") + 
+  ylab("") + 
+  scale_fill_fermenter(palette = "RdBu",
+                              na.value = "gray30",
+                              limits = c(-5, 5),
+                              breaks = c(-2, -1, -0.5, -0.1, 0.1, 0.5, 1, 2)) +
+  ggtitle("(F) DNO3 (2090s-2010s)") + 
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "uM", title.position = "top",show.limits = T))
+
+fig_336
+
+# Bottom Left (3,3,7) = Nutricline in 2010s
+nutcline_historic_plot <- reshape2::melt(nutcline_historic)
+nutcline_historic_plot$lon <- as.vector(lonlat_grid_lon)
+nutcline_historic_plot$lat <- as.vector(lonlat_grid_lat)
+
+pal = cmocean("tempo", direction = -1)(6)
+fig_337 <- ggplot(data = nutcline_historic_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("") + 
+  ylab("") + 
+  scale_fill_gradientn(colors = pal,
+                              na.value = "gray30",
+                              limits = c(0, 250),
+                              breaks = c(0, 20, 90, 120, 150, 200)) +
+  ggtitle("(G) Nutricline (2010s)") + 
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "m", title.position = "top",show.limits = TRUE))
+fig_337
+
+# Bottom Middle (3,3,8) = Nutricline in 2090s
+nutcline_SSP370_plot <- reshape2::melt(nutcline_SSP370)
+nutcline_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+nutcline_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+pal = cmocean("tempo", direction = -1)(12)
+fig_338 <- ggplot(data = nutcline_SSP370_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("") + 
+  ylab("") + 
+  scale_fill_gradientn(colors = pal,
+                              na.value = "gray30",
+                              limits = c(0, 250),
+                              breaks = c(0, 20, 90, 120, 150, 200)) +
+  ggtitle("(H) Nutricline (2090s)") + 
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "m", title.position = "top",show.limits = TRUE))
+
+fig_338
+
+# Bottom Right (3,3,9) = DNutricline (2090s-2010s)
+nutcline_diffSSP370hist_plot <- nutcline_SSP370_plot - nutcline_historic_plot
+nutcline_diffSSP370hist_plot$lon <- as.vector(lonlat_grid_lon)
+nutcline_diffSSP370hist_plot$lat <- as.vector(lonlat_grid_lat)
+pal = cmocean("balance")(12)
+
+fig_339 <- ggplot(data = nutcline_diffSSP370hist_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("") + 
+  ylab("") + 
+  scale_fill_fermenter(palette = "RdBu",
+                              na.value = "gray30",
+                              limits = c(-150, 150),
+                              breaks = c(-125,-100, -50, -20,-10,10,20,50,100,125,150)) +
+  ggtitle("(I) DNutricline (2090s-2010s)") + 
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "m", title.position = "top",show.limits = TRUE))
+
+fig_339
+
+# Convert the figures to grobs
+fig_331_grob <- ggplotGrob(fig_331)
+fig_332_grob <- ggplotGrob(fig_332)
+fig_333_grob <- ggplotGrob(fig_333)
+fig_334_grob <- ggplotGrob(fig_334)
+fig_335_grob <- ggplotGrob(fig_335)
+fig_336_grob <- ggplotGrob(fig_336)
+fig_337_grob <- ggplotGrob(fig_337)
+fig_338_grob <- ggplotGrob(fig_338)
+fig_339_grob <- ggplotGrob(fig_339)
+gg <- ggplot() +
+  coord_equal(xlim = c(1, 17.5), ylim = c(1, 16), expand = F) +
+    annotation_custom(fig_331_grob,
+                      xmin = 1, xmax = 6.5, ymin = 11, ymax = 16) +  
+    annotation_custom(fig_332_grob,
+                      xmin = 6.5, xmax = 12, ymin = 11, ymax = 16) +  
+      annotation_custom(fig_333_grob,
+                      xmin = 12, xmax = 17.5, ymin = 11, ymax = 16) + 
+    annotation_custom(fig_334_grob,
+                      xmin = 1, xmax = 6.5, ymin = 6, ymax = 11) +  
+    annotation_custom(fig_335_grob,
+                      xmin = 6.5, xmax = 12, ymin = 6, ymax = 11) +  
+      annotation_custom(fig_336_grob,
+                      xmin = 12, xmax = 17.5, ymin = 6, ymax = 11) + 
+    annotation_custom(fig_337_grob,
+                      xmin = 1, xmax = 6.5, ymin = 1, ymax = 6) +  
+    annotation_custom(fig_338_grob,
+                      xmin = 6.5, xmax = 12, ymin = 1, ymax = 6) +  
+      annotation_custom(fig_339_grob,
+                      xmin = 12, xmax = 17.5, ymin = 1, ymax = 6) + 
+    theme(panel.border = element_blank())
+# gg
+ggsave("Figures/FigSX_SST_NO3_Nutcline_wCESM_historic_ssp370.pdf",
+        width = 18, # The width of the plot in inches
+        height = 15)
+
+```
+
+### Predict C:P and N:P with GAM and CESM model outputs (SST, Nitrate, Nutrient limitation)
+Models are created in the file "Figure_Supplementary_ver2.Rmd"
+```{r}
+##  Rename Nutrient limitation matrix
+nutlim_historic[nutlim_historic == 1] <- "P-lim"
+nutlim_historic[nutlim_historic == 2] <- "PN-colim"
+nutlim_historic[nutlim_historic == 3] <- "N-lim"
+nutlim_historic[nutlim_historic == 4] <- "Fe-lim"
+nutlim_SSP370[nutlim_SSP370 == 1] <- "P-lim"
+nutlim_SSP370[nutlim_SSP370 == 2] <- "PN-colim"
+nutlim_SSP370[nutlim_SSP370 == 3] <- "N-lim"
+nutlim_SSP370[nutlim_SSP370 == 4] <- "Fe-lim"
+```
+
+Models are created in the file "Figure_Supplementary_ver2.Rmd"
+N only = Change in Nitrate only from historic to SSP370 
+T only = Change in SST only
+Nutlim only = Change in Nutrient limitation only
+Nutcline only = Change in Nutricline depth only
+```{r}
+## Load GAM Models (GS and Control)
+load("GAM_Model/modGS_CP.rda")
+load("GAM_Model/modC_CP.rda")
+
+load("GAM_Model/modGS_NP.rda")
+load("GAM_Model/modC_NP.rda")
+
+## Make dataset for C:N:P prediction
+newd_historic_full = data.frame(SST = as.vector(sst_surf_historic),
+                  Nutcline_GLODAP_1um = as.vector(nutcline_historic),
+                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutlim = factor(as.vector(nutlim_historic), levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+)
+
+newd_SSP370_full = data.frame(SST = as.vector(sst_surf_SSP370),
+                  Nutcline_GLODAP_1um = as.vector(nutcline_SSP370),
+                  logNO3_fill = as.vector(log(nitrate_surf_SSP370)),
+                  Nutlim = factor(as.vector(nutlim_SSP370), levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+)
+
+newd_SSP370_Tonly = data.frame(SST = as.vector(sst_surf_SSP370),
+                  Nutcline_GLODAP_1um = as.vector(nutcline_historic),        
+                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutlim = factor(as.vector(nutlim_historic), levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+)
+
+newd_SSP370_Nonly = data.frame(SST = as.vector(sst_surf_historic), 
+                  Nutcline_GLODAP_1um = as.vector(nutcline_historic),                  
+                  logNO3_fill = as.vector(log(nitrate_surf_SSP370)),
+                  Nutlim = factor(as.vector(nutlim_historic), levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+)
+
+newd_SSP370_Nutclineonly = data.frame(SST = as.vector(sst_surf_historic), 
+                  Nutcline_GLODAP_1um = as.vector(nutcline_SSP370),                  
+                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutlim = factor(as.vector(nutlim_historic), levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+)
+
+newd_SSP370_Nutlimonly = data.frame(SST = as.vector(sst_surf_historic),
+                  Nutcline_GLODAP_1um = as.vector(nutcline_historic), 
+                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutlim = factor(as.vector(nutlim_SSP370), levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+)
+
+```
+
+
+```{r}
+# Predict C:P with model GS and C
+pred_cp_historic_full_modGS <- array(exp(predict(modGS_CP, newdata = newd_historic_full)), c(360,180))
+pred_cp_SSP370_full_modGS <- array(exp(predict(modGS_CP, newdata = newd_SSP370_full)), c(360,180))
+pred_cp_SSP370_Tonly_modGS <- array(exp(predict(modGS_CP, newdata = newd_SSP370_Tonly)), c(360,180))
+pred_cp_SSP370_Nonly_modGS <- array(exp(predict(modGS_CP, newdata = newd_SSP370_Nonly)), c(360,180))
+pred_cp_SSP370_Nutlimonly_modGS <- array(exp(predict(modGS_CP, newdata = newd_SSP370_Nutlimonly)), c(360,180))
+pred_cp_SSP370_Nutclineonly_modGS <- array(exp(predict(modGS_CP, newdata = newd_SSP370_Nutclineonly)), c(360,180))
+
+pred_cp_historic_full_modC <- array(exp(predict(modC_CP, newdata = newd_historic_full)), c(360,180))
+pred_cp_SSP370_full_modC <- array(exp(predict(modC_CP, newdata = newd_SSP370_full)), c(360,180))
+pred_cp_SSP370_Tonly_modC <- array(exp(predict(modC_CP, newdata = newd_SSP370_Tonly)), c(360,180))
+pred_cp_SSP370_Nonly_modC <- array(exp(predict(modC_CP, newdata = newd_SSP370_Nonly)), c(360,180))
+pred_cp_SSP370_Nutlimonly_modC <- array(exp(predict(modC_CP, newdata = newd_SSP370_Nutlimonly)), c(360,180))
+pred_cp_SSP370_Nutclineonly_modC <- array(exp(predict(modC_CP, newdata = newd_SSP370_Nutclineonly)), c(360,180))
+
+# Predict N:P with model GS, G, and C
+pred_np_historic_full_modGS <- array(exp(predict(modGS_NP, newdata = newd_historic_full)), c(360,180))
+pred_np_SSP370_full_modGS <- array(exp(predict(modGS_NP, newdata = newd_SSP370_full)), c(360,180))
+pred_np_SSP370_Tonly_modGS <- array(exp(predict(modGS_NP, newdata = newd_SSP370_Tonly)), c(360,180))
+pred_np_SSP370_Nonly_modGS <- array(exp(predict(modGS_NP, newdata = newd_SSP370_Nonly)), c(360,180))
+pred_np_SSP370_Nutlimonly_modGS <- array(exp(predict(modGS_NP, newdata = newd_SSP370_Nutlimonly)), c(360,180))
+pred_np_SSP370_Nutclineonly_modGS <- array(exp(predict(modGS_NP, newdata = newd_SSP370_Nutclineonly)), c(360,180))
+
+pred_np_historic_full_modC <- array(exp(predict(modC_NP, newdata = newd_historic_full)), c(360,180))
+pred_np_SSP370_full_modC <- array(exp(predict(modC_NP, newdata = newd_SSP370_full)), c(360,180))
+pred_np_SSP370_Tonly_modC <- array(exp(predict(modC_NP, newdata = newd_SSP370_Tonly)), c(360,180))
+pred_np_SSP370_Nonly_modC <- array(exp(predict(modC_NP, newdata = newd_SSP370_Nonly)), c(360,180))
+pred_np_SSP370_Nutlimonly_modC <- array(exp(predict(modC_NP, newdata = newd_SSP370_Nutlimonly)), c(360,180))
+pred_np_SSP370_Nutclineonly_modC <- array(exp(predict(modC_NP, newdata = newd_SSP370_Nutclineonly)), c(360,180))
+
+```
+
+
+
+###  Calculating confidence in C:P and N:P projection
+Steps are,
+1: Create 1000 models each from posterior distributions of model GS, 
+2: Then sample 2000 models with replacement.
+3: Calculate ΔC:P for each 2000 pairs. 
+4: Of those 2000 pairs count what % predict positive change
+5: Repeat for model C
+6: Repeat 1-5 for N:P
+```{r}
+# Function to take m models from posterior distribution and n models with replacement
+sim_random_posterior <- function(model,m,n,data) {
+   sim_model <- invisible(exp(simulate(model,
+                                     nsim = m,
+                                    seed = 101,
+                                         newdata = dplyr::select(data,c('SST','Nutcline_GLODAP_1um','logNO3_fill','Nutlim')))))
+   # sim_model <- t(sim_model) # transpose object
+   # Selecting 2000 models with replacement for each grid point
+   sim_model<- sim_model[, sample(ncol(sim_model), n, replace = TRUE)]
+}
+```
+
+```{r}
+# Takes long time (~ 5 mins) so comment out only necessary
+# sim_cp_full_historic_modGS <- sim_random_posterior(modGS_CP, 1000, 2000, newd_historic_full)
+# sim_cp_full_SSP370_modGS <- sim_random_posterior(modGS_CP, 1000, 2000, newd_SSP370_full)
+# 
+# sim_cp_full_historic_modC <- sim_random_posterior(modC_CP, 1000, 2000, newd_historic_full)
+# sim_cp_full_SSP370_modC <- sim_random_posterior(modC_CP, 1000, 2000, newd_SSP370_full)
+# 
+# # # Calculating the difference at each grid point and count how many out of 2000 are positive
+# diffcp_full_modGS <- sim_cp_full_SSP370_modGS - sim_cp_full_historic_modGS
+# diffcp_full_Pos_Count_modGS <- rowSums(diffcp_full_modGS[,] > 0)
+# diffcp_full_PosCount_grid_modGS <- array(diffcp_full_Pos_Count_modGS, dim = c(360, 180))
+# 
+# diffcp_full_modC <- sim_cp_full_SSP370_modC - sim_cp_full_historic_modC
+# diffcp_full_Pos_Count_modC <- rowSums(diffcp_full_modC[,] > 0)
+# diffcp_full_PosCount_grid_modC <- array(diffcp_full_Pos_Count_modC, dim = c(360, 180))
+# 
+# # # Calculate SD for each grid
+# diffcp_full_Sds_modGS <- rowSds(diffcp_full_modGS[,])
+# diffcp_full_Sds_modGS_grid <- array(diffcp_full_Sds_modGS, dim = c(360, 180))
+# 
+# diffcp_full_Sds_modC <- rowSds(diffcp_full_modC[,])
+# diffcp_full_Sds_modC_grid <- array(diffcp_full_Sds_modC, dim = c(360, 180))
+# # 
+# # # # Delete everything other than grid model output
+# rm(sim_cp_full_historic_modGS,
+#    sim_cp_full_historic_modC,
+#    sim_cp_full_SSP370_modGS,
+#    sim_cp_full_SSP370_modC,
+#    diffcp_full_modGS,
+#    diffcp_full_Pos_Count_modGS,
+#    diffcp_full_modC,
+#    diffcp_full_Pos_Count_modC,
+#    diffcp_full_Sds_modGS,
+#    diffcp_full_Sds_modC
+# )
+# # 
+# # # Save gridded output
+# save(diffcp_full_PosCount_grid_modGS,file="GAM_model/diffcp_full_PosCount_grid_modGS.rda")
+# save(diffcp_full_PosCount_grid_modC,file="GAM_model/diffcp_full_PosCount_grid_modC.rda")
+# save(diffcp_full_Sds_modGS_grid,file="GAM_model/diffcp_full_Sds_modGS_grid.rda")
+# save(diffcp_full_Sds_modC_grid,file="GAM_model/diffcp_full_Sds_modC_grid.rda")
+```
+
+```{r}
+# Repeat everything for N:P
+# Takes long time (~ 5 mins) so comment out only necessary
+# sim_np_full_historic_modGS <- sim_random_posterior(modGS_NP, 1000, 2000, newd_historic_full)
+# sim_np_full_SSP370_modGS <- sim_random_posterior(modGS_NP, 1000, 2000, newd_SSP370_full)
+# 
+# sim_np_full_historic_modC <- sim_random_posterior(modC_NP, 1000, 2000, newd_historic_full)
+# sim_np_full_SSP370_modC <- sim_random_posterior(modC_NP, 1000, 2000, newd_SSP370_full)
+# # # 
+# # # # Calculating the difference at each grid point and count how many out of 2000 are positive
+# diffnp_full_modGS <- sim_np_full_SSP370_modGS - sim_np_full_historic_modGS
+# diffnp_full_Pos_Count_modGS <- rowSums(diffnp_full_modGS[,] > 0)
+# diffnp_full_PosCount_grid_modGS <- array(diffnp_full_Pos_Count_modGS, dim = c(360, 180))
+# 
+# diffnp_full_modC <- sim_np_full_SSP370_modC - sim_np_full_historic_modC
+# diffnp_full_Pos_Count_modC <- rowSums(diffnp_full_modC[,] > 0)
+# diffnp_full_PosCount_grid_modC <- array(diffnp_full_Pos_Count_modC, dim = c(360, 180))
+# # # 
+# # # # Calculate SD for each grid
+# diffnp_full_Sds_modGS <- rowSds(diffnp_full_modGS[,])
+# diffnp_full_Sds_modGS_grid <- array(diffnp_full_Sds_modGS, dim = c(360, 180))
+# # 
+# diffnp_full_Sds_modC <- rowSds(diffnp_full_modC[,])
+# diffnp_full_Sds_modC_grid <- array(diffnp_full_Sds_modC, dim = c(360, 180))
+# # 
+# # # Delete everything other than grid model output
+# rm(sim_np_full_historic_modGS,
+#    sim_np_full_historic_modC,
+#    sim_np_full_SSP370_modGS,
+#    sim_np_full_SSP370_modC,
+#    diffnp_full_modGS,
+#    diffnp_full_Pos_Count_modGS,
+#    diffnp_full_modC,
+#    diffnp_full_Pos_Count_modC,
+#    diffnp_full_Sds_modGS,
+#    diffnp_full_Sds_modC
+# )
+# # 
+# # # Save gridded output
+# save(diffnp_full_PosCount_grid_modGS,file="GAM_model/diffnp_full_PosCount_grid_modGS.rda")
+# save(diffnp_full_PosCount_grid_modC,file="GAM_model/diffnp_full_PosCount_grid_modC.rda")
+# save(diffnp_full_Sds_modGS_grid,file="GAM_model/diffnp_full_Sds_modGS_grid.rda")
+# save(diffnp_full_Sds_modC_grid,file="GAM_model/diffnp_full_Sds_modC_grid.rda")
+```
+
+```{r}
+load("GAM_model/diffcp_full_PosCount_grid_modC.rda")
+load("GAM_model/diffcp_full_PosCount_grid_modGS.rda")
+load("GAM_model/diffnp_full_PosCount_grid_modC.rda")
+load("GAM_model/diffnp_full_PosCount_grid_modGS.rda")
+```
+
+```{r}
+# Figure 4 Main
+# Plotting Delta C:P and Confidence graphs side by side using ggplot (to reduce the computational effort with Adobe)
+
+# Left = Delta C:P of model GS (full)
+delcp_full <- pred_cp_SSP370_full_modGS - pred_cp_historic_full_modGS
+delcp_full_plot <- reshape2::melt(delcp_full)
+delcp_full_plot$lon <- as.vector(lonlat_grid_lon)
+delcp_full_plot$lat <- as.vector(lonlat_grid_lat)
+
+fig_left <- ggplot(data = delcp_full_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  xlab("Longitude") +
+  ylab("Latitude") + 
+  scale_fill_cmocean(name = "balance", na.value = "black",breaks = seq(-25,25,5),limits=c(-30, 30),discrete = FALSE) + 
+  ggtitle("(A) DC:P (2090s - 2010s, SSP3-7.0)") + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
+          axis.text = element_text(colour = "black"),
+          axis.ticks = element_line(colour = "black"), legend.position = "bottom") +
+  guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75,title = "DC:P (molar)", title.position = "bottom"))
+
+fig_left
+
+# Right = Model Confidence
+# modelconf_cp_full <- pmax((diffcp_full_PosCount_grid_modGS)/2000,1-(diffcp_full_PosCount_grid_modGS)/2000)*100
+modelconf_cp_full <- diffcp_full_PosCount_grid_modGS/2000*100
+modelconf_cp_full_plot <- reshape2::melt(modelconf_cp_full)
+modelconf_cp_full_plot$lon <- as.vector(lonlat_grid_lon)
+modelconf_cp_full_plot$lat <- as.vector(lonlat_grid_lat)
+
+fig_right <- ggplot(data = modelconf_cp_full_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("Longitude") + 
+  # scale_fill_fermenter(direction = 1, palette = "Oranges", na.value = "black",breaks = seq(50,100,10),limits=c(50, 100),labels = c("50%","60%","70%","80%","90%","100%")) +
+  # scale_fill_fermenter(direction = -1,
+  #                      palette = "PuOr",
+  #                      na.value = "black",
+  #                      breaks = seq(0,100,12.5),
+  #                      limits=c(0, 100),
+  #                      labels = c("100%-",
+  #                                 "87.5%-",
+  #                                 "75%-",
+  #                                 "62.5%-",
+  #                                 "50/50",
+  #                                 "62.5%+",
+  #                                 "75%+",
+  #                                 "87.5%+",
+  #                                 "100%+")) +
+  scale_fill_fermenter(direction = -1, 
+                       palette = "PuOr", 
+                       na.value = "black", 
+                       breaks = seq(0,100,100/7),
+                       limits=c(0, 100),
+                       labels = c("100%-",
+                                  "86%-",
+                                  "71%-",
+                                  "57%-",
+                                  "57%+",
+                                  "71%+",
+                                  "86%+",
+                                  "100%+")) +
+  ggtitle("(B) Model agreement on the sign of DC:P") + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
+          axis.text = element_text(colour = "black"),
+          axis.ticks = element_line(colour = "black"), legend.position = "bottom") +
+  guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75, title = "Model agreement", title.position = "bottom"))
+
+fig_right
+
+# Convert the figures to grobs
+fig_left_grob <- ggplotGrob(fig_left)
+fig_right_grob <- ggplotGrob(fig_right)
+gg <- ggplot() +
+  coord_equal(xlim = c(1, 10), ylim = c(1, 6), expand = F) +
+    annotation_custom(fig_left_grob,
+                      xmin = 1, xmax = 5.5, ymin = 1, ymax = 6) +  
+      annotation_custom(fig_right_grob,
+                      xmin = 5.5, xmax = 10, ymin = 1, ymax = 6) + 
+    theme(panel.border = element_blank())
+gg
+ggsave("Figures/Fig4_delCP_modGS_conf.pdf",
+        width = 8, # The width of the plot in inches
+        height = 5)
+```
+
+```{r}
+# Figure 4 Main with N:P
+# Plotting Delta N:P and Confidence graphs side by side using ggplot (to reduce the computational effort with Adobe)
+
+# Left = Delta N:P of model GS (full)
+delnp_full <- pred_np_SSP370_full_modGS - pred_np_historic_full_modGS
+delnp_full_plot <- reshape2::melt(delnp_full)
+delnp_full_plot$lon <- as.vector(lonlat_grid_lon)
+delnp_full_plot$lat <- as.vector(lonlat_grid_lat)
+
+fig_left <- ggplot(data = delnp_full_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  xlab("Longitude") +
+  ylab("Latitude") + 
+  scale_fill_cmocean(name = "balance", na.value = "black",breaks = seq(-5,5,1),limits=c(-6, 6),discrete = FALSE) + 
+  ggtitle("(A) DN:P (2090s - 2010s, SSP3-7.0)") + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
+          axis.text = element_text(colour = "black"),
+          axis.ticks = element_line(colour = "black"), legend.position = "bottom") +
+  guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75,title = "DN:P (molar)", title.position = "bottom"))
+
+fig_left
+
+# Right = Model Confidence
+# modelconf_np_full <- pmax((diffnp_full_PosCount_grid_modGS)/2000,1-(diffnp_full_PosCount_grid_modGS)/2000)*100
+modelconf_np_full <- diffnp_full_PosCount_grid_modGS/2000*100
+modelconf_np_full_plot <- melt(modelconf_np_full)
+modelconf_np_full_plot$lon <- as.vector(lonlat_grid_lon)
+modelconf_np_full_plot$lat <- as.vector(lonlat_grid_lat)
+
+fig_right <- ggplot(data = modelconf_np_full_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  labs(y = NULL) +
+  xlab("Longitude") + 
+  # scale_fill_fermenter(direction = 1, palette = "Oranges", na.value = "black",breaks = seq(50,100,10),limits=c(50, 100),labels = c("50%","60%","70%","80%","90%","100%")) +
+  scale_fill_fermenter(direction = -1, 
+                       palette = "PuOr", 
+                       na.value = "black", 
+                       breaks = seq(0,100,100/7),
+                       limits=c(0, 100),
+                       labels = c("100%-",
+                                  "86%-",
+                                  "71%-",
+                                  "57%-",
+                                  "57%+",
+                                  "71%+",
+                                  "86%+",
+                                  "100%+")) +
+  ggtitle("(B) Model agreement on the sign of DN:P") + 
+  theme_bw(base_size = 10, base_family = "Helvetica") + 
+  theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
+          axis.text = element_text(colour = "black"),
+          axis.ticks = element_line(colour = "black"), legend.position = "bottom") +
+  guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75, title = "Model agreement", title.position = "bottom"))
+
+fig_right
+
+# Convert the figures to grobs
+fig_left_grob <- ggplotGrob(fig_left)
+fig_right_grob <- ggplotGrob(fig_right)
+gg <- ggplot() +
+  coord_equal(xlim = c(1, 10), ylim = c(1, 6), expand = F) +
+    annotation_custom(fig_left_grob,
+                      xmin = 1, xmax = 5.5, ymin = 1, ymax = 6) +  
+      annotation_custom(fig_right_grob,
+                      xmin = 5.5, xmax = 10, ymin = 1, ymax = 6) + 
+    theme(panel.border = element_blank())
+gg
+ggsave("Figures/Fig4_delNP_modGS_conf.pdf",
+        width = 8, # The width of the plot in inches
+        height = 5)
+```
+### Make Supplementary Figure Comparing C:P and N:P (historic, SSP370, and change)
+```{r}
+# Top Left (2,3,1) = C:P Historic (full)
+cp_historic_plot <- reshape2::melt(pred_cp_historic_full_modGS)
+cp_historic_plot$lon <- as.vector(lonlat_grid_lon)
+cp_historic_plot$lat <- as.vector(lonlat_grid_lat)
+pal = turbo(20)
+fig_231 <- ggplot(data = cp_historic_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+  geom_raster(aes(fill = value)) +
+    scale_fill_gradientn(colors = pal,
+                              na.value = "gray30",
+                              limits = c(50, 230),
+                              breaks = c(75, 100, 120, 140, 160,180,200,220),oob=squish) +
+  geom_point(pch =21, data = POM_all_binned, aes(x = Longitude, y = Latitude, fill = exp(logCP)), size =2.0,show.legend = F, color = "transparent") +
+  ggtitle("(A) C:P (2010s)") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "", title.position = "top",show.limits = FALSE))
+
+fig_231
+
+# Top Middle  (2,3,2) = C:P SSP370 (full)
+cp_SSP370_plot <- reshape2::melt(pred_cp_SSP370_full_modGS)
+cp_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+cp_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+pal = turbo(20)
+fig_232 <- ggplot(data = cp_SSP370_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+  geom_raster(aes(fill = value)) +
+    scale_fill_gradientn(colors = pal,
+                              na.value = "gray30",
+                              limits = c(50, 230),
+                              breaks = c(75, 100, 120, 140, 160,180,200,220),oob=squish) +
+  # geom_point(pch =21, data = POM_all_binned, aes(x = Longitude, y = Latitude, fill = exp(logCP)), size = 2.0,show.legend = F,color = "black",stroke = 0.1) + 
+  # scale_fill_gradientn(colors = pal, 
+  #                       limits = c(50, 250), 
+  #                       breaks = c(75, 100, 120, 140, 160,180,200,220)) + 
+  ggtitle("(B) C:P (2090s)") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "", title.position = "top",show.limits = TRUE))
+
+fig_232
+
+# Top Left (2, 3, 3) = Delta C:P of model GS (full) = Same as Main Fig. 3
+delcp_full <- pred_cp_SSP370_full_modGS - pred_cp_historic_full_modGS
+delcp_full_plot <- reshape2::melt(delcp_full)
+delcp_full_plot$lon <- as.vector(lonlat_grid_lon)
+delcp_full_plot$lat <- as.vector(lonlat_grid_lat)
+
+fig_233<- ggplot(data = delcp_full_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+  scale_fill_cmocean(name = "balance", na.value = "black",breaks = seq(-25,25,5),limits=c(-30, 30),discrete = FALSE) + 
+  ggtitle("(C) DC:P (2090s - 2010s)") + 
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 14, title = "", title.position = "top"))
+
+fig_233
+
+# Bottom Left (2,3,4) = N:P Historic (full)
+np_historic_plot <- reshape2::melt(pred_np_historic_full_modGS)
+np_historic_plot$lon <- as.vector(lonlat_grid_lon)
+np_historic_plot$lat <- as.vector(lonlat_grid_lat)
+pal = turbo(20)
+fig_234 <- ggplot(data = np_historic_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+  geom_raster(aes(fill = value)) +
+    scale_fill_gradientn(colors = pal,
+                              na.value = "gray30",
+                              limits = c(10, 36),
+                              breaks = c(12, 14, 16,18,20,22,24,28,32),oob=squish) +
+  geom_point(pch =21, data = POM_all_binned, aes(x = Longitude, y = Latitude, fill = exp(logNP)), size =2.0,show.legend = F, color = "transparent") +
+  ggtitle("(D) N:P (2010s)") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "", title.position = "top",show.limits = F))
+
+fig_234
+
+# Bottom Middle (2,3,5) = N:P SSP370 (full)
+np_SSP370_plot <- reshape2::melt(pred_np_SSP370_full_modGS)
+np_SSP370_plot$lon <- as.vector(lonlat_grid_lon)
+np_SSP370_plot$lat <- as.vector(lonlat_grid_lat)
+pal = turbo(20)
+fig_235 <- ggplot(data = np_SSP370_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+  geom_raster(aes(fill = value)) +
+    scale_fill_gradientn(colors = pal,
+                              na.value = "gray30",
+                              limits = c(10, 36),
+                              breaks = c(12, 14, 16,18,20,22,24,28,32),oob=squish) +
+  # geom_point(pch =21, data = POM_all_binned, aes(x = Longitude, y = Latitude, fill = exp(logNP)), size = 2.0,show.legend = F,color = "black",stroke = 0.1) + 
+  ggtitle("(E) N:P (2090s)") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorsteps(barwidth = 0.75, barheight = 14, title = "", title.position = "top",show.limits = F))
+
+fig_235
+
+# Bottom Right (2,3,6) = Delta N:P of model GS (full) = Same as Fig. 3
+delnp_full <- pred_np_SSP370_full_modGS - pred_np_historic_full_modGS
+delnp_full_plot <- reshape2::melt(delnp_full)
+delnp_full_plot$lon <- as.vector(lonlat_grid_lon)
+delnp_full_plot$lat <- as.vector(lonlat_grid_lat)
+
+fig_236 <- ggplot(data = delnp_full_plot, aes(x = lon, y = lat)) +
+    geom_raster(aes(fill = value)) +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+  scale_fill_cmocean(name = "balance", na.value = "black",breaks = seq(-5,5,1),limits=c(-6, 6),discrete = FALSE) + 
+  ggtitle("(F) DN:P (2090s - 2010s)") + 
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 14, title = "", title.position = "top"))
+
+fig_236
+
+# Convert the figures to grobs
+fig_231_grob <- ggplotGrob(fig_231)
+fig_232_grob <- ggplotGrob(fig_232)
+fig_233_grob <- ggplotGrob(fig_233)
+fig_234_grob <- ggplotGrob(fig_234)
+fig_235_grob <- ggplotGrob(fig_235)
+fig_236_grob <- ggplotGrob(fig_236)
+gg <- ggplot() +
+  coord_equal(xlim = c(1, 17.5), ylim = c(1, 11), expand = F) +
+    annotation_custom(fig_231_grob,
+                      xmin = 1, xmax = 6.5, ymin = 11, ymax = 6) +  
+    annotation_custom(fig_232_grob,
+                      xmin = 6.5, xmax = 12, ymin = 11, ymax = 6) +  
+      annotation_custom(fig_233_grob,
+                      xmin = 12, xmax = 17.5, ymin = 11, ymax = 6) + 
+    annotation_custom(fig_234_grob,
+                      xmin = 1, xmax = 6.5, ymin = 6, ymax = 1) +  
+    annotation_custom(fig_235_grob,
+                      xmin = 6.5, xmax = 12, ymin = 6, ymax = 1) +  
+      annotation_custom(fig_236_grob,
+                      xmin = 12, xmax = 17.5, ymin = 6, ymax = 1) + 
+    theme(panel.border = element_blank())
+# gg
+ggsave("Figures/FigSX_CP_NP_wCESM_historic_ssp370.pdf",
+        width = 18, # The width of the plot in inches
+        height = 10)
+
+```
+### Summaries of Regional and Global Change in C:P and N:P
+```{r}
+# Global
+
+cp_global_historic <- weighted.mean(log(pred_cp_historic_full_modGS), area_weights, na.rm = TRUE)
+np_global_historic <- weighted.mean(log(pred_np_historic_full_modGS), area_weights, na.rm = TRUE)
+cp_global_SSP370 <- weighted.mean(log(pred_cp_SSP370_full_modGS), area_weights, na.rm = TRUE)
+np_global_SSP370 <- weighted.mean(log(pred_np_SSP370_full_modGS), area_weights, na.rm = TRUE)
+
+# Regional
+
+# Function to calculate regional means
+cnp_regional <- function(cnp_data, region_grid, area_weights){
+  data_vec <- reshape2::melt(cnp_data)
+  data_vec$regions <- as.vector(region_grid)
+  data_vec$area_weights <- as.vector(area_weights)
+  data_vec_regional <- data_vec %>% group_by(regions) %>%
+  summarise(mean = exp(weighted.mean(log(value), area_weights, na.rm = TRUE)))
+  
+}
+
+# C:P
+cp_historic_full_vec_regional <- cnp_regional(pred_cp_historic_full_modGS, lonlat_regions, area_weights) 
+cp_historic_full_vec_largeregional <- cnp_regional(pred_cp_historic_full_modGS, lonlat_large_regions, area_weights)
+cp_SSP370_full_vec_regional <- cnp_regional(pred_cp_SSP370_full_modGS, lonlat_regions, area_weights) 
+cp_SSP370_full_vec_largeregional <- cnp_regional(pred_cp_SSP370_full_modGS, lonlat_large_regions, area_weights)
+
+# N:P
+np_historic_full_vec_regional <- cnp_regional(pred_np_historic_full_modGS, lonlat_regions, area_weights) 
+np_historic_full_vec_largeregional <- cnp_regional(pred_np_historic_full_modGS, lonlat_large_regions, area_weights)
+np_SSP370_full_vec_regional <- cnp_regional(pred_np_SSP370_full_modGS, lonlat_regions, area_weights) 
+np_SSP370_full_vec_largeregional <- cnp_regional(pred_np_SSP370_full_modGS, lonlat_large_regions, area_weights)
+
+# Summarize in a table
+regions <- c(region,"High lat", "Low lat", "Global")
+
+
+cp_hist <- c(cp_historic_full_vec_regional$mean, cp_historic_full_vec_largeregional$mean, exp(cp_global_historic))
+cp_SSP370 <- c(cp_SSP370_full_vec_regional$mean, cp_SSP370_full_vec_largeregional$mean, exp(cp_global_SSP370))
+np_hist <- c(np_historic_full_vec_regional$mean, np_historic_full_vec_largeregional$mean, exp(np_global_historic))
+np_SSP370 <- c(np_SSP370_full_vec_regional$mean, np_SSP370_full_vec_largeregional$mean, exp(np_global_SSP370))
+summary_cesm_pred_regional <- data.frame(regions, 
+                                         cp_hist, 
+                                         cp_SSP370, 
+                                         np_hist,
+                                         np_SSP370)
+colnames(summary_cesm_pred_regional) <- c('Region',
+                                          'C:P Historical (2010s)',
+                                          'C:P SSP370 (2090s)',
+                                          'N:P Historical (2010s)',
+                                          'N:P SSP 370 (2090s)')
+summary_cesm_pred_regional %>% mutate_if(is.numeric, round, digits = 1)
+
+#        Region C:P Historical (2010s) C:P SSP370 (2090s) N:P Historical (2010s) N:P SSP 370 (2090s)
+# 1       Polar                   70.8               76.8                   12.9                13.0
+# 2    Subpolar                  101.9              113.3                   17.0                18.4
+# 3 Subtropical                  149.2              146.6                   21.8                21.5
+# 4    Tropical                  133.4              128.1                   19.6                18.2
+# 5    High lat                   93.5              103.7                   16.0                17.0
+# 6     Low lat                  143.0              139.3                   20.9                20.2
+# 7      Global                  128.0              129.1                   19.5                19.3
+
+```
+
+### Make Supplementary Figure Comparing Drivers of C:P (T, NO3, Nutricline, Nutricline x Nutlim, All)
+
+```{r}
+# Fig (5,1,1) = T effect
+delcp_plot <- reshape2::melt(pred_cp_SSP370_Tonly_modGS - pred_cp_historic_full_modGS)
+delcp_plot$lon <- as.vector(lonlat_grid_lon)
+delcp_plot$lat <- as.vector(lonlat_grid_lat)
+fig_511 <- ggplot(data = delcp_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+  geom_raster(aes(fill = value)) +
+  scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                     breaks = seq(-25,25,5),
+                     limits=c(-30, 30),discrete = FALSE,
+                     oob=squish) +
+  ggtitle("(A) Temperature") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+
+fig_511
+
+# Fig (5,1,2) = NO3 effect
+delcp_plot <- reshape2::melt(pred_cp_SSP370_Nonly_modGS - pred_cp_historic_full_modGS)
+delcp_plot$lon <- as.vector(lonlat_grid_lon)
+delcp_plot$lat <- as.vector(lonlat_grid_lat)
+fig_512 <- ggplot(data = delcp_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+  geom_raster(aes(fill = value)) +
+  scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                     breaks = seq(-25,25,5),
+                     limits=c(-30, 30),discrete = FALSE,
+                     oob=squish) +
+  ggtitle("(B) Nitrate") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+
+fig_512
+
+# Fig (5,1,3) = Nutricline effect
+delcp_plot <- reshape2::melt(pred_cp_SSP370_Nutclineonly_modGS - pred_cp_historic_full_modGS)
+delcp_plot$lon <- as.vector(lonlat_grid_lon)
+delcp_plot$lat <- as.vector(lonlat_grid_lat)
+fig_513 <- ggplot(data = delcp_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+  geom_raster(aes(fill = value)) +
+  scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                     breaks = seq(-25,25,5),
+                     limits=c(-30, 30),discrete = FALSE,
+                     oob=squish) +
+  ggtitle("(C) Nutricline") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+
+fig_513
+
+# Fig (5,1,4) = Nutricline x Nutlim effect
+delcp_plot <- reshape2::melt(pred_cp_SSP370_Nutlimonly_modGS - pred_cp_historic_full_modGS)
+delcp_plot$lon <- as.vector(lonlat_grid_lon)
+delcp_plot$lat <- as.vector(lonlat_grid_lat)
+fig_514 <- ggplot(data = delcp_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+  geom_raster(aes(fill = value)) +
+  scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                     breaks = seq(-25,25,5),
+                     limits=c(-30, 30),discrete = FALSE,
+                     oob=squish) +
+  ggtitle("(D) Nutricline x Nutlim") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+
+fig_514
+
+# Fig (5,1,5) = All effects
+delcp_plot <- reshape2::melt(pred_cp_SSP370_full_modGS - pred_cp_historic_full_modGS)
+delcp_plot$lon <- as.vector(lonlat_grid_lon)
+delcp_plot$lat <- as.vector(lonlat_grid_lat)
+fig_515 <- ggplot(data = delcp_plot, aes(x = lon, y = lat)) +
+      coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+      xlab("") +
+      ylab("") + 
+  geom_raster(aes(fill = value)) +
+  scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                     breaks = seq(-25,25,5),
+                     limits=c(-30, 30),discrete = FALSE,
+                     oob=squish) +
+  ggtitle("(E) All effects") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+
+fig_515
+
+# Save all in one figure using grob
+fig_511_grob <- ggplotGrob(fig_511)
+fig_512_grob <- ggplotGrob(fig_512)
+fig_513_grob <- ggplotGrob(fig_513)
+fig_514_grob <- ggplotGrob(fig_514)
+fig_515_grob <- ggplotGrob(fig_515)
+gg <- ggplot() +
+  coord_equal(xlim = c(1, 17), ylim = c(1, 8), expand = F) +
+    annotation_custom(fig_511_grob,
+                      xmin = 1, xmax = 5, ymin = 4.5, ymax = 8) +  
+    annotation_custom(fig_512_grob,
+                      xmin = 5, xmax = 9, ymin = 4.5, ymax = 8) +  
+      annotation_custom(fig_513_grob,
+                      xmin = 9, xmax = 13, ymin = 4.5, ymax = 8) + 
+    annotation_custom(fig_514_grob,
+                      xmin = 13, xmax = 17, ymin = 4.5, ymax = 8) +  
+    annotation_custom(fig_515_grob,
+                      xmin = 1, xmax = 5, ymin = 1, ymax = 4.5) +  
+    theme(panel.border = element_blank())
+# gg
+ggsave("Figures/FigSX_CP_effects_historic_ssp370.pdf",
+       width = 17, # The width of the plot in inches
+       height = 8)
+```
+### Make Supplementary Figure Comparing Drivers of N:P (T, NO3, Nutricline, Nutricline x Nutlim, All)
+
+```{r}
+# Fig (5,1,1) = T effect
+delnp_plot <- reshape2::melt(pred_np_SSP370_Tonly_modGS - pred_np_historic_full_modGS)
+delnp_plot$lon <- as.vector(lonlat_grid_lon)
+delnp_plot$lat <- as.vector(lonlat_grid_lat)
+fig_511 <- ggplot(data = delnp_plot, aes(x = lon, y = lat)) +
+  coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  xlab("") +
+  ylab("") + 
+  geom_raster(aes(fill = value)) +
+  scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                     breaks = seq(-5,5,1),
+                     limits=c(-6,6),discrete = FALSE,
+                     oob=squish) +
+  ggtitle("(A) Temperature") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+
+fig_511
+
+# Fig (5,1,2) = NO3 effect
+delnp_plot <- reshape2::melt(pred_np_SSP370_Nonly_modGS - pred_np_historic_full_modGS)
+delnp_plot$lon <- as.vector(lonlat_grid_lon)
+delnp_plot$lat <- as.vector(lonlat_grid_lat)
+fig_512 <- ggplot(data = delnp_plot, aes(x = lon, y = lat)) +
+  coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  xlab("") +
+  ylab("") + 
+  geom_raster(aes(fill = value)) +
+  scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                     breaks = seq(-5,5,1),
+                     limits=c(-6,6),discrete = FALSE,
+                     oob=squish) +
+  ggtitle("(B) Nitrate") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+
+fig_512
+
+# Fig (5,1,3) = Nutricline effect
+delnp_plot <- reshape2::melt(pred_np_SSP370_Nutclineonly_modGS - pred_np_historic_full_modGS)
+delnp_plot$lon <- as.vector(lonlat_grid_lon)
+delnp_plot$lat <- as.vector(lonlat_grid_lat)
+fig_513 <- ggplot(data = delnp_plot, aes(x = lon, y = lat)) +
+  coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  xlab("") +
+  ylab("") + 
+  geom_raster(aes(fill = value)) +
+  scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                     breaks = seq(-5,5,1),
+                     limits=c(-6,6),discrete = FALSE,
+                     oob=squish) +
+  ggtitle("(C) Nutricline") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+
+fig_513
+
+# Fig (5,1,4) = Nutricline x Nutlim effect
+delnp_plot <- reshape2::melt(pred_np_SSP370_Nutlimonly_modGS - pred_np_historic_full_modGS)
+delnp_plot$lon <- as.vector(lonlat_grid_lon)
+delnp_plot$lat <- as.vector(lonlat_grid_lat)
+fig_514 <- ggplot(data = delnp_plot, aes(x = lon, y = lat)) +
+  coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  xlab("") +
+  ylab("") + 
+  geom_raster(aes(fill = value)) +
+  scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                     breaks = seq(-5,5,1),
+                     limits=c(-6,6),discrete = FALSE,
+                     oob=squish) +
+  ggtitle("(D) Nutricline x Nutlim") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+
+fig_514
+
+# Fig (5,1,5) = All effects
+delnp_plot <- reshape2::melt(pred_np_SSP370_full_modGS - pred_np_historic_full_modGS)
+delnp_plot$lon <- as.vector(lonlat_grid_lon)
+delnp_plot$lat <- as.vector(lonlat_grid_lat)
+fig_515 <- ggplot(data = delnp_plot, aes(x = lon, y = lat)) +
+  coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+  xlab("") +
+  ylab("") + 
+  geom_raster(aes(fill = value)) +
+  scale_fill_cmocean(name = "balance", na.value = "gray30", 
+                     breaks = seq(-5,5,1),
+                     limits=c(-6,6),discrete = FALSE,
+                     oob=squish) +
+  ggtitle("(E) All effects") +
+  theme_bw(base_size = 18, base_family = "Helvetica") +
+  theme(legend.position = "right",legend.key.size = unit(0.2, "cm")) + 
+  theme(panel.border =  element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_blank(),  axis.text.y = element_blank()) + 
+  guides(fill = guide_colorbar(barwidth = 0.75, barheight = 12, title = "", title.position = "top",show.limits = FALSE))
+
+fig_515
+
+# Save all in one figure using grob
+fig_511_grob <- ggplotGrob(fig_511)
+fig_512_grob <- ggplotGrob(fig_512)
+fig_513_grob <- ggplotGrob(fig_513)
+fig_514_grob <- ggplotGrob(fig_514)
+fig_515_grob <- ggplotGrob(fig_515)
+gg <- ggplot() +
+  coord_equal(xlim = c(1, 17), ylim = c(1, 8), expand = F) +
+    annotation_custom(fig_511_grob,
+                      xmin = 1, xmax = 5, ymin = 4.5, ymax = 8) +  
+    annotation_custom(fig_512_grob,
+                      xmin = 5, xmax = 9, ymin = 4.5, ymax = 8) +  
+      annotation_custom(fig_513_grob,
+                      xmin = 9, xmax = 13, ymin = 4.5, ymax = 8) + 
+    annotation_custom(fig_514_grob,
+                      xmin = 13, xmax = 17, ymin = 4.5, ymax = 8) +  
+    annotation_custom(fig_515_grob,
+                      xmin = 1, xmax = 5, ymin = 1, ymax = 4.5) +  
+    theme(panel.border = element_blank())
+# gg
+ggsave("Figures/FigSX_NP_effects_historic_ssp370.pdf",
+       width = 17, # The width of the plot in inches
+       height = 8)
+```
+
+
+
+### Figure 4a. T effect ΔC:P and ΔN:P
+```{r}
+### Figure 4a. T effect ΔC:P and ΔN:P
+plot_delCP_SSP370_hist(pred_cp_SSP370_Tonly_modGS,
+                        pred_cp_historic_full_modGS,
+                        "a. DelC:P (T effect, modGS)",
+                        "Fig4a_DelCP_Tempeffect_modGS.pdf",
+                        save = 0)
+
+plot_delNP_SSP370_hist(pred_np_SSP370_Tonly_modGS,
+                        pred_np_historic_full_modGS,
+                        "a. DelN:P (T effect, modGS)",
+                        "Fig4a_DelNP_Tempeffect_modGS.pdf",
+                        save = 0)
+
+plot_delCP_SSP370_hist(pred_cp_SSP370_Tonly_modC,
+                        pred_cp_historic_full_modC,
+                        "a. DelC:P (T effect, modC)",
+                        "Fig4a_DelCP_Tempeffect_modC.pdf",
+                        save = 0)
+
+plot_delNP_SSP370_hist(pred_np_SSP370_Tonly_modC,
+                        pred_np_historic_full_modC,
+                        "a. DelN:P (T effect, modC)",
+                        "Fig4a_DelNP_Tempeffect_modC.pdf",
+                        save = 0)
+
+```
+
+### Figure 4b. Nitrate effect ΔC:P and ΔN:P
+```{r}
+### Figure 4b. Nutcline effect ΔC:P and ΔN:P
+plot_delCP_SSP370_hist(pred_cp_SSP370_Nonly_modGS,
+                        pred_cp_historic_full_modGS,
+                        "b. DelC:P (N only, modGS)",
+                        "Fig4b_DelCP_Neffect_modGS.pdf",
+                        save = 0)
+
+plot_delNP_SSP370_hist(pred_np_SSP370_Nonly_modGS,
+                        pred_np_historic_full_modGS,
+                        "b. DelN:P (Nonly, modGS)",
+                        "Fig4b_DelNP_Neffect_modGS.pdf",
+                        save = 0)
+
+plot_delCP_SSP370_hist(pred_cp_SSP370_Nonly_modC,
+                        pred_cp_historic_full_modC,
+                        "b. DelC:P (N only, modC)",
+                        "Fig4b_DelCP_Neffect_modC.pdf",
+                        save = 0)
+
+plot_delNP_SSP370_hist(pred_np_SSP370_Nonly_modC,
+                        pred_np_historic_full_modC,
+                        "b. DelN:P (Nonly, modC)",
+                        "Fig4b_DelNP_Neffect_modC.pdf",
+                        save = 0)
+```
+
+### Figure 4c. Nutrient limitation effect ΔC:P and ΔN:P
+```{r}
+### Figure 4c. Nutlim effect ΔC:P and ΔN:P
+plot_delCP_SSP370_hist(pred_cp_SSP370_Nutlimonly_modGS,
+                        pred_cp_historic_full_modGS,
+                        "c. DelC:P (Nutlim only, modGS)",
+                        "Fig4c_DelCP_Nutlimeffect_modGS.pdf",
+                        save = 0)
+
+plot_delNP_SSP370_hist(pred_np_SSP370_Nutlimonly_modGS,
+                        pred_np_historic_full_modGS,
+                        "c. DelN:P (Nutlim only, modGS)",
+                        "Fig4c_DelNP_Nutlimeffect_modGS.pdf",
+                        save = 0)
+
+plot_delCP_SSP370_hist(pred_cp_SSP370_Nutlimonly_modC,
+                        pred_cp_historic_full_modC,
+                        "c. DelC:P (Nutlim only, modC)",
+                        "Fig4c_DelCP_Nutlimeffect_modC.pdf",
+                        save = 0)
+
+plot_delNP_SSP370_hist(pred_np_SSP370_Nutlimonly_modC,
+                        pred_np_historic_full_modC,
+                        "c. DelN:P (Nutlim only, modC)",
+                        "Fig4c_DelNP_Nutlimeffect_modC.pdf",
+                        save = 0)
+```
+### Figure 4d. Nutricline effect ΔC:P and ΔN:P
+```{r}
+### Figure 4d. Nutricline effect ΔC:P and ΔN:P
+plot_delCP_SSP370_hist(pred_cp_SSP370_Nutclineonly_modGS,
+                        pred_cp_historic_full_modGS,
+                        "d. DelC:P (Nutcline only, modGS)",
+                        "Fig4d_DelCP_Nutline_modGS.pdf",
+                        save = 0)
+
+plot_delNP_SSP370_hist(pred_np_SSP370_Nutclineonly_modGS,
+                        pred_np_historic_full_modGS,
+                        "d. DelN:P (Nutcline only, modGS)",
+                        "Fig4c_DelNP_Nutcline_modGS.pdf",
+                        save = 0)
+
+plot_delCP_SSP370_hist(pred_cp_SSP370_Nutclineonly_modC,
+                        pred_cp_historic_full_modC,
+                        "d. DelC:P (Nutcline only, modC)",
+                        "Fig4c_DelCP_Nutcline_modC.pdf",
+                        save = 0)
+
+plot_delNP_SSP370_hist(pred_np_SSP370_Nutclineonly_modC,
+                        pred_np_historic_full_modC,
+                        "d. DelN:P (Nutcline only, modC)",
+                        "Fig4d_DelNP_Nutcline_modC.pdf",
+                        save = 0)
+```
+
+### Figure 4e. All effects ΔC:P and ΔN:P
+```{r}
+### Figure 4d. All effects ΔC:P and ΔN:P
+plot_delCP_SSP370_hist(pred_cp_SSP370_full_modGS,
+                        pred_cp_historic_full_modGS,
+                        "e. DelC:P (All efects, modGS)",
+                        "Fig4e_DelCP_Alleffect_modGS.pdf",
+                        save = 0)
+
+plot_delNP_SSP370_hist(pred_np_SSP370_full_modGS,
+                        pred_np_historic_full_modGS,
+                        "e. DelN:P (All effects, modGS)",
+                        "Fig4e_DelNP_Alleffect_modGS.pdf",
+                        save = 0)
+
+plot_delCP_SSP370_hist(pred_cp_SSP370_full_modC,
+                        pred_cp_historic_full_modC,
+                        "e. DelC:P (All efects, modC)",
+                        "Fig4e_DelCP_Alleffect_modC.pdf",
+                        save = 0)
+
+plot_delNP_SSP370_hist(pred_np_SSP370_full_modC,
+                        pred_np_historic_full_modC,
+                        "e. DelN:P (All effects, modC)",
+                        "Fig4e_DelNP_Alleffect_modC.pdf",
+                        save = 0)
+```
+
+# Form confidence % = % of model realizations predicting the same direction of change
+```{r}
+plot_modelconf(diffcp_full_PosCount_grid_modGS,
+               titlename="e.Model Confidence DelC:P (modGS)",
+               filename="Fig4e_DelCP_Confidence_modGS.pdf",
+               save=0)
+plot_modelconf(diffcp_full_PosCount_grid_modC,
+               titlename="e.Model Confidence DelC:P (modC)",
+               filename="Fig4e_DelCP_Confidence_modC.pdf",
+               save=0)
+plot_modelconf(diffnp_full_PosCount_grid_modGS,
+               titlename="e.Model Confidence DelN:P (modGS)",
+               filename="Fig4e_DelNP_Confidence_modGS.pdf",
+               save=0)
+plot_modelconf(diffnp_full_PosCount_grid_modC,
+               titlename="e.Model Confidence DelN:P (modC)",
+               filename="Fig4e_DelNP_Confidence_modC.pdf",
+               save=0)
+
+```
+
+### Alternative visualization of model conf
+
+```{r}
+# Figure 4e: Mapping the confidence in ΔC:P (modGS)
+# pdf(file="Figures/Fig4e_DelCP_Confidence_modGS.pdf",
+#         width = 8, # The width of the plot in inches
+#         height = 5)
+par(mar=c(1.5, 1, 1.5, 1))
+lonlim <- c(-180, 180)
+latlim <- c(-90, 90)
+Zlim = c(0,100)
+Col =rev(brewer.pal(7, "BrBG"))
+
+drawPalette(zlim = Zlim,
+            col = Col,
+            # at = seq(100/22,1050/11,100/11),
+            at = seq(100/14,650/7,100/7),
+            labels = c("93%-", 
+                       "79%-", 
+                       "64%-",
+                       "50/50",
+                       "64%+",
+                       "79%+", 
+                       "93%+"),
+            drawTriangles = FALSE,
+            las = 1,
+            cex = 0.3)
+
+mapPlot(coastlineWorld, 
+        projection="+proj=robin",
+        col="black", 
+        longitudelim=lonlim, 
+        latitudelim=latlim, 
+        axes = TRUE,
+        drawBox = FALSE,
+        grid = FALSE,
+        clip = TRUE,
+        border = "black",
+        lonlabels = TRUE,
+        latlabels = TRUE,
+        geographical = 0,
+        axisStyle = 1)
+
+# Dummy background color for polar regions
+mapImage(lon,
+         lat[lat_mask],
+         sst_surf_historic[,lat_mask],
+#         pred_cp_Nutonly_historic_grid,
+         zlim = Zlim,
+         col = "gray50")
+
+mapImage(lon,
+         lat,
+         (diffcp_full_PosCount_grid_modGS)/2000*100,
+         zlim = Zlim,
+         col = Col)
+
+
+title('')
+title("e.Model Confidence DelC:P (modGS)", outer=FALSE, cex=0.75) # title for overall plot
+# dev.off()
+```
+
+```{r}
+# Figure 4e: Mapping the confidence in ΔC:P (modC)
+# pdf(file="Figures/Fig4e_DelCP_Confidence_modC.pdf",
+#         width = 8, # The width of the plot in inches
+#         height = 5)
+par(mar=c(1.5, 1, 1.5, 1))
+lonlim <- c(-180, 180)
+latlim <- c(-90, 90)
+Zlim = c(0,100)
+Col =rev(brewer.pal(7, "BrBG"))
+
+drawPalette(zlim = Zlim,
+            col = Col,
+            # at = seq(100/22,1050/11,100/11),
+            at = seq(100/14,650/7,100/7),
+            labels = c("93%-", 
+                       "79%-", 
+                       "64%-",
+                       "50/50",
+                       "64%+",
+                       "79%+", 
+                       "93%+"),
+            drawTriangles = FALSE,
+            las = 1,
+            cex = 0.3)
+
+mapPlot(coastlineWorld, 
+        projection="+proj=robin",
+        col="black", 
+        longitudelim=lonlim, 
+        latitudelim=latlim, 
+        axes = TRUE,
+        drawBox = FALSE,
+        grid = FALSE,
+        clip = TRUE,
+        border = "black",
+        lonlabels = TRUE,
+        latlabels = TRUE,
+        geographical = 0,
+        axisStyle = 1)
+
+# Dummy background color for polar regions
+mapImage(lon,
+         lat[lat_mask],
+         sst_surf_historic[,lat_mask],
+#         pred_cp_Nutonly_historic_grid,
+         zlim = Zlim,
+         col = "gray50")
+
+mapImage(lon,
+         lat,
+         (diffcp_full_PosCount_grid_modC)/2000*100,
+         zlim = Zlim,
+         col = Col)
+
+
+title('')
+title("e.Model Confidence DelC:P (modC)", outer=FALSE, cex=0.75) # title for overall plot
+# dev.off()
+```
+
