@@ -79,29 +79,30 @@ bin_data_1by1 <- function(data) {
   }
   data_binned <- data %>% 
   mutate(binlon = cut(Longitude, seq(from = -180.0, to = 180.0, by = 1.0), include.lowest = T, right = F), binlat = cut(Latitude, seq(from = -90.0, to = 90.0, by = 1.0), include.lowest = T, right = F)
-         )  %>% group_by(binlat, binlon) %>%  summarise(POCavg = mean(POCavg),
-                                                        PONavg = mean(PONavg), 
-            POPavg = mean(POPavg),
-            logCP = mean(logCP), logNP = mean(logNP), logCN = mean(logCN),
-            absLatitude = mean(absLatitude), 
-            SST = mean(SST), 
-            logPO4_fill = mean(logPO4_fill),
-            logNO3_fill = mean(logNO3_fill),
-            Nutcline_GLODAP_1um = mean(Nutcline_GLODAP_1um),
-            Nstar_200_GLODAP = mean(Nstar_200_GLODAP),
-            MLD_Holte17 = mean(MLD_Holte17),
-            MLPAR = mean(MLPAR),
-            CHLOR_a_MODIS = mean(CHLOR_a_MODIS),
-            SPP_Rich_Righetti19 = mean(SPP_Rich_Righetti19),
-            frac_dia_NOBM = mean(frac_dia_NOBM),
-            frac_cya_NOBM = mean(frac_cya_NOBM),
-            region =  ifelse(absLatitude < 15, "Tropical",
-                             ifelse(absLatitude >= 15 & absLatitude < 45, "Subtropical",
-                                    ifelse(absLatitude >= 45 & absLatitude < 65, "Subpolar",
-                                           "Polar"))),            
-            # area_weights = cos(deg2rad(Latitude)),
-            sp_Nutlim_CESM2 = getmode(sp_Nutlim_CESM2),
-            Nutlim = getmode(Nutlim)
+         )  %>% group_by(binlat, binlon) %>%  summarise(POCavg = mean(POCavg_uM, na.rm = TRUE),
+                                                        PONavg = mean(PONavg_uM, na.rm = TRUE),
+                                                        POPavg = mean(POPavg_nM, na.rm = TRUE),
+                                                        logCP = mean(logCP, na.rm = TRUE), 
+                                                        logNP = mean(logNP, na.rm = TRUE), 
+                                                        logCN = mean(logCN, na.rm = TRUE),
+                                                        absLatitude = mean(absLatitude, na.rm = TRUE),
+                                                        SST = mean(Temperature, na.rm = TRUE),
+                                                        PO4 = mean(Phosphate, na.rm = TRUE),
+                                                        NO3 = mean(DIN, na.rm = TRUE),
+                                                        Nutcline_1uM_interp = mean(Nutricline_1uM_Interp, na.rm = TRUE),
+                                                        MLD_Holte17 = mean(MLD_Holte17, na.rm = TRUE),
+                                                        MLPAR = mean(MLPAR_surfmean_umols, na.rm = TRUE),
+                                                        CHLOR_a_MODIS = mean(CHLOR_a_MODIS, na.rm = TRUE),
+                                                        frac_dia_NOBM = mean(frac_dia_NOBM, na.rm = TRUE),
+                                                        frac_coc_NOBM = mean(frac_coc_NOBM, na.rm = TRUE),
+                                                        frac_cya_NOBM = mean(frac_cya_NOBM, na.rm = TRUE),
+                                                        frac_chloro_NOBM = mean(frac_chloro_NOBM, na.rm = TRUE),
+                                                        region =  ifelse(absLatitude < 15, "Tropical",
+                                                                         ifelse(absLatitude >= 15 & absLatitude < 45, "Subtropical",
+                                                                                ifelse(absLatitude >= 45 & absLatitude < 65, "Subpolar",
+                                                                                       "Polar"))),
+                                                        sp_Nutlim_CESM2 = getmode(sp_Nutlim_CESM2),
+                                                        Nutlim = getmode(Nutlim)
             )  %>% replace_with_na_all(condition = ~.x == -Inf) %>% mutate(Latitude = lat_grid[as.integer(binlat)],Longitude = lon_grid[as.integer(binlon)])
 data_binned$region <- factor(data_binned$region,
                                       levels = c("Polar", "Subpolar", "Subtropical","Tropical"))
@@ -115,17 +116,17 @@ data_binned
 
 # Function to prepare dataset for GAM analyses
 clean_data_for_gam <- function(data) {
-  data_for_gam <- data %>% dplyr::select(logCP, logNP, logCN,
-                                          SST, 
-                                          logNO3_fill,
-                                          logPO4_fill,
-                                          Nutcline_GLODAP_1um,
-                                          Nstar_200_GLODAP,
-                                          MLPAR,
-                                         sp_Nutlim_CESM2,
-                                         absLatitude,
-					 contains("Nutlim")
-                                          ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% tidyr::drop_na(SST, logNO3_fill,  Nutcline_GLODAP_1um) 
+  data_for_gam <- data %>% dplyr::mutate(NO3 = ifelse(DIN < 0.1, 0.1, DIN),
+                                         PO4 = ifelse(Phosphate < 0.01, 0.01, Phosphate),
+                                         logNO3 = log(NO3),
+                                         logPO4 = log(PO4),
+                                         SST = Temperature,
+                                         Nutcline_1uM_interp = Nutricline_1uM_Interp) %>% dplyr::select(logCP, logNP, logCN,
+                                                                              SST, logNO3, logPO4,
+                                                                              Nutcline_1uM_interp, sp_Nutlim_CESM2,
+                                                                              absLatitude,
+                                                                              contains("Nutlim")
+                                          ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% tidyr::drop_na(SST, logNO3, logPO4, Nutcline_1uM_interp) 
 
   if("Nutlim" %in% colnames(data_for_gam))
     {
@@ -177,30 +178,30 @@ sep_data_lowlat <- function(data,latitude = 45) {
 
 # Function to select variables for Correlation analyses and standardize data
 clean_data_for_corr <- function(POM_all) {
-  POM_all_corr <- POM_all %>% dplyr::select(logCP, logNP, logCN,
-                                          absLatitude,
-                                          SST,
-                                          logNO3_fill,
-                                          logPO4_fill,
-                                          logFeT,
-                                          Nutcline_GLODAP_1um,
-                                          # Nstar_200_GLODAP,
-                                          MLD_Holte17,
-                                          MLPAR,
-                                          CHLOR_a_MODIS,
-                                          frac_dia_NOBM,
-                                          frac_cya_NOBM,
-                                          sp_Nutlim_CESM2
-                                          ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% drop_na(SST, MLPAR, logNO3_fill, logPO4_fill,sp_Nutlim_CESM2)
-  scaled.POM_all_corr <- data.frame(scale(POM_all_corr[,1:ncol(POM_all_corr)-1]))
+  POM_all_corr <- POM_all %>% dplyr::mutate(NO3 = ifelse(DIN < 0.1, 0.1, DIN),
+                                            PO4 = ifelse(Phosphate < 0.01, 0.01, Phosphate),
+                                            logNO3 = log(NO3),
+                                            logPO4 = log(PO4),
+                                            logFeT = log(FeT_CESM),
+                                            SST = Temperature,
+                                            MLPAR = MLPAR_surfmean_umols,
+                                            Nutcline_1uM_interp = Nutricline_1uM_Interp) %>% dplyr::select(logCP, logNP, logCN,
+                  absLatitude, SST, logNO3, logPO4,
+                  logFeT, Nutcline_1uM_interp, MLD_Holte17,
+                  MLPAR, CHLOR_a_MODIS,
+                  frac_dia_NOBM, frac_coc_NOBM, frac_chloro_NOBM, frac_cya_NOBM) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% drop_na(absLatitude, SST, logNO3, logPO4,
+                                                                                                                                                                               logFeT, Nutcline_1uM_interp, MLD_Holte17,
+                                                                                                                                                                               MLPAR, CHLOR_a_MODIS,
+                                                                                                                                                                               frac_dia_NOBM, frac_coc_NOBM, frac_cya_NOBM, frac_chloro_NOBM)
+  scaled.POM_all_corr <- data.frame(scale(POM_all_corr[,1:ncol(POM_all_corr)]))
 }
 
 # Function to get correlation matrix with column and rownames
 M.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE, colnames = FALSE) {
-  if (highlat) {
+  # if (highlat) {
   # For nutricline manually assign value of 0
-  scaled.POM_all_corr$Nutcline_GLODAP_1um <- rep(0,length(scaled.POM_all_corr$Nutcline_GLODAP_1um))
-  }
+  # scaled.POM_all_corr$Nutcline_GLODAP_1um <- rep(0,length(scaled.POM_all_corr$Nutcline_GLODAP_1um))
+  # }
   M.scaled.POM_corr <- cor(scaled.POM_all_corr,
                                   method = c("pearson"), 
                                   use = "pairwise.complete.obs")
@@ -210,14 +211,14 @@ M.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE, colnames = FALSE) {
                                            "SST","Nitrate","Phosphate", "FeT", 
                                            "Nutricline", 
                                            "MLD", "MLPAR", "Chl-a",
-                                           "% Diatoms", "% Cyano"
+                                           "% Diatoms", "% Cocco","% Chloro","% Cya"
                                            ))
   } else {
   colnames(M.POM_corr_selected) <- paste(c("",
                                            "","","","",
                                            "", 
                                            "", "", "",
-                                           "", ""
+                                           "", "","",""
                                            ))    
   }
   rownames(M.POM_corr_selected) <- paste(c("C:P", "N:P", "C:N"))
@@ -226,10 +227,10 @@ M.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE, colnames = FALSE) {
 
 # Function to get pvalue for correlation matrix
 testRes.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE) {
-  if (highlat) {
-  # For nutricline manually assign value of 0
-  scaled.POM_all_corr$Nutcline_GLODAP_1um <- rep(0,length(scaled.POM_all_corr$Nutcline_GLODAP_1um))
-  } 
+  # if (highlat) {
+  # # For nutricline manually assign value of 0
+  # scaled.POM_all_corr$Nutcline_GLODAP_1um <- rep(0,length(scaled.POM_all_corr$Nutcline_GLODAP_1um))
+  # } 
   M.scaled.POM_corr <- cor(scaled.POM_all_corr,
                                   method = c("pearson"), 
                                   use = "pairwise.complete.obs")
@@ -240,10 +241,10 @@ testRes.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE) {
 }
 
 # Function to make Nutlim Data to overlay on top of CESM model nutrient limitation output
-make_obsNutlim_overlay_cesm <- function(POM_all_binned, POM_genomes_selected) {
+make_obsNutlim_overlay_cesm <- function(POM_all_binned, POM_genomes_selected_binned) {
   POM_all_binned_selected <- POM_all_binned
-  POM_genomes_selected_binned <- bin_data_1by1(POM_genomes_selected)
   POM_all_binned_selected$Nutlim <- rep(NA,length(POM_all_binned_selected$sp_Nutlim_CESM2))
+  
   POM_all_binned_selected <- POM_all_binned_selected[POM_all_binned_selected$absLatitude > max(POM_genomes_selected_binned$absLatitude),]
   POM_genomes_selected_binned_w_highlat <- rbind(POM_genomes_selected_binned,POM_all_binned_selected)
   return(POM_genomes_selected_binned_w_highlat)

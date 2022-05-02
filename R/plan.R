@@ -1,7 +1,7 @@
 plan  <-  drake::drake_plan(
   # Data -------------------------------------------------
-  POM_all = read.csv("data/POM_all.csv"),                           # all POM data after selection
-  POM_genomes_selected = read.csv("data/POM_genomes_selected.csv"), # POM data paired with genome-based nut limitation
+  POM_all = read.csv("data/data_Tanioka22_NatCom_POM_all.csv"),                           # all POM data after selection
+  POM_genomes_selected = read.csv("data/data_Tanioka22_NatCom_POM_genomes_selected.csv"), # POM data paired with genome-based nut limitation
   # Data wrangling for various analyses ------------------
   POM_all_binned = bin_data_1by1(POM_all), 
   POM_genomes_selected_binned = bin_data_1by1(POM_genomes_selected), 
