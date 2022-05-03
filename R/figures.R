@@ -166,14 +166,14 @@ make_fig_3a <- function(data_all, mod_CP) {
                   alpha=0.4, 
                   inherit.aes=FALSE) +
       geom_line(aes(y=exp(fit)), data=mod_CP_SST_pred, cex = 0.75)+ 
-      coord_cartesian(xlim = c(0,33), ylim = c(60, 255)) + 
+      coord_cartesian(xlim = c(0,33), ylim = c(60, 280)) + 
       xlab("") +
       ylab("C:P") +
       xlim(0,33) + 
-      ylim(60,255) + 
+      ylim(60,280) + 
       scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
-      scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
-                         labels = c(75, 100, 125, 150, 175, 200, 225)) + 
+      scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225,250,275),
+                         labels = c(75, 100, 125, 150, 175, 200, 225,250,275)) + 
       theme_bw(base_size = 8, base_family = "Helvetica") + 
       theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(),
             panel.grid.minor = element_blank())
@@ -191,14 +191,14 @@ make_fig_3d <- function(data_all,mod_NP) {
               alpha=0.4, 
               inherit.aes=FALSE) +
         geom_line(aes(y=exp(fit)), data=mod_NP_SST_pred, cex = 0.75)+ 
-        coord_cartesian(xlim = c(0,33), ylim = c(10, 36)) + 
+        coord_cartesian(xlim = c(0,33), ylim = c(10, 37)) + 
         xlab("") +
         ylab("N:P") +
         xlim(0,33) + 
-        ylim(10,36) + 
+        ylim(10,37) + 
         scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
-        scale_y_continuous(breaks = c(12, 16, 20, 24, 28,32),
-                   labels = c(12, 16, 20, 24, 28,32)) +       
+        scale_y_continuous(breaks = c(12, 16, 20, 24, 28, 32, 36),
+                   labels = c(12, 16, 20, 24, 28, 32, 36)) +       
         theme_bw(base_size = 8, base_family = "Helvetica") + 
         theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
       }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
@@ -237,14 +237,14 @@ make_fig_3b <- function(data_all,mod_CP) {
               alpha=0.4, 
               inherit.aes=FALSE) +
       geom_line(aes(y=exp(fit)), data=mod_CP_Nitrate_pred, cex = 0.75)+ 
-      coord_cartesian(xlim = c(-1.0,1.5), ylim = c(60, 255)) + 
+      coord_cartesian(xlim = c(-1.0,1.5), ylim = c(60, 280)) + 
       xlab("") +
       ylab("") +
       xlim(-1.0,1.5) + 
-      ylim(60,255) + 
+      ylim(60,280) + 
       scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
-      scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
-                   labels = c(75, 100, 125, 150, 175, 200, 225)) +     
+      scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225,250,275),
+                   labels = c(75, 100, 125, 150, 175, 200, 225, 250,275)) +     
       theme_bw(base_size = 8, base_family = "Helvetica") + 
       theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
     }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
@@ -261,14 +261,14 @@ make_fig_3e <- function(data_all,mod_NP) {
               alpha=0.4, 
               inherit.aes=FALSE) +
         geom_line(aes(y=exp(fit)), data=mod_NP_Nitrate_pred, cex = 0.75)+ 
-        coord_cartesian(xlim = c(-1.0,1.5), ylim = c(10, 36)) + 
+        coord_cartesian(xlim = c(-1.0,1.5), ylim = c(10, 37)) + 
         xlab("") +
         ylab("") +
         xlim(-1.0,1.5) + 
-        ylim(10,36) + 
+        ylim(10,37) + 
         scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
-        scale_y_continuous(breaks = c(12, 16, 20, 24, 28, 32),
-                   labels = c(12, 16, 20, 24, 28, 32)) +       
+        scale_y_continuous(breaks = c(12, 16, 20, 24, 28, 32, 36),
+                   labels = c(12, 16, 20, 24, 28, 32, 36)) +       
         theme_bw(base_size = 8, base_family = "Helvetica") + 
         theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
       }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
@@ -307,14 +307,14 @@ make_fig_3c <- function(data_all,mod_CP_Nutcline_Nutlim_modGS) {
       annotate("text", x=210*0.95, y=255*0.95, label= "(C)") +
       geom_jitter(aes(color = Nutlim), size = 0.45, alpha = 1.0) +   
       geom_line(aes(x = Nutcline_1uM_interp, y=exp(fit), group = Nutlim, color = Nutlim), data=mod_CP_Nutcline_Nutlim_pred, cex = 0.75) + 
-      coord_cartesian(xlim = c(0,210), ylim = c(60, 255)) + 
+      coord_cartesian(xlim = c(0,210), ylim = c(60, 275)) + 
       xlab("") +
       ylab("") +
       xlim(0,210) + 
-      ylim(60,255) +
+      ylim(60,280) +
       scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
-      scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
-                   labels = c(75, 100, 125, 150, 175, 200, 225)) + 
+      scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225,250,275),
+                   labels = c(75, 100, 125, 150, 175, 200, 225,250,275)) + 
       theme_bw(base_size = 8, base_family = "Helvetica") + 
       theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
     }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.title.y=element_blank(), axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
@@ -328,14 +328,14 @@ make_fig_3f <- function(data_all, mod_NP_Nutcline_Nutlim_modGS) {
       annotate("text", x=210*0.95, y=36*0.95, label= "(F)") +
       geom_jitter(aes(color = Nutlim), size = 0.45, alpha = 1.0) +   
       geom_line(aes(x = Nutcline_1uM_interp, y=exp(fit), group = Nutlim, color = Nutlim), data=mod_NP_Nutcline_Nutlim_pred, cex = 0.75) + 
-      coord_cartesian(xlim = c(0,210), ylim = c(10, 36)) + 
+      coord_cartesian(xlim = c(0,210), ylim = c(10, 37)) + 
       xlab("") +
       ylab("") +
       xlim(0,210) + 
-      ylim(10,36) + 
+      ylim(10,37) + 
       scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
-      scale_y_continuous(breaks = c(12, 16, 20, 24, 28,32),
-                   labels = c(12, 16, 20, 24, 28,32)) +      
+      scale_y_continuous(breaks = c(12, 16, 20, 24, 28, 32, 36),
+                   labels = c(12, 16, 20, 24, 28, 32, 36)) +      
       theme_bw(base_size = 8, base_family = "Helvetica") + 
       theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
     }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.title.y=element_blank(), axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))

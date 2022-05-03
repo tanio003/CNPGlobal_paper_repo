@@ -189,19 +189,19 @@ clean_data_for_corr <- function(POM_all) {
                   absLatitude, SST, logNO3, logPO4,
                   logFeT, Nutcline_1uM_interp, MLD_Holte17,
                   MLPAR, CHLOR_a_MODIS,
-                  frac_dia_NOBM, frac_coc_NOBM, frac_chloro_NOBM, frac_cya_NOBM) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) # %>% drop_na(absLatitude, 
-                                                                                                                                                                   #            SST, 
-                                                                                                                                                                   #            logNO3, 
-                                                                                                                                                                  #             logPO4,
-                                                                                                                                                                  #             logFeT, 
-                                                                                                                                                                  #             Nutcline_1uM_interp, 
-                                                                                                                                                                  #             MLD_Holte17,
-                                                                                                                                                                  #             MLPAR, 
-                                                                                                                                                                  #             CHLOR_a_MODIS,
-                                                                                                                                                                  #             frac_dia_NOBM, 
-                                                                                                                                                                  #             frac_coc_NOBM, 
-                                                                                                                                                                  #             frac_cya_NOBM, 
-                                                                                                                                                                  #             frac_chloro_NOBM)
+                  frac_dia_NOBM, frac_coc_NOBM, frac_chloro_NOBM, frac_cya_NOBM) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf)  %>% drop_na(absLatitude, 
+                                                                                                                                                                               SST, 
+                                                                                                                                                                               logNO3, 
+                                                                                                                                                                               logPO4,
+                                                                                                                                                                               logFeT, 
+                                                                                                                                                                               Nutcline_1uM_interp, 
+                                                                                                                                                                               MLD_Holte17,
+                                                                                                                                                                               MLPAR, 
+                                                                                                                                                                               CHLOR_a_MODIS,
+                                                                                                                                                                               frac_dia_NOBM, 
+                                                                                                                                                                               frac_coc_NOBM, 
+                                                                                                                                                                               frac_cya_NOBM, 
+                                                                                                                                                                               frac_chloro_NOBM)
   scaled.POM_all_corr <- data.frame(scale(POM_all_corr[,1:ncol(POM_all_corr)]))
 }
 
@@ -269,6 +269,11 @@ b1_2vars <- function(xvar1, xvar2, yvar, data) {
   b1 <- gam(as.formula(paste(yvar, "~", "s(",xvar1,")","+", "s(",xvar2,")")),data = data, method ="REML",na.action = na.omit)
 }
 
+# Function to conduct GAM with 3 variables with no interactions
+b1_3vars <- function(xvar1, xvar2, xvar3, yvar, data) {
+  b1 <- gam(as.formula(paste(yvar, "~", "s(",xvar1,")","+", "s(",xvar2,")","+", "s(",xvar3,")")),data = data, method ="REML",na.action = na.omit)
+}
+
 # Functions to conduct GAM with 4 predetermined variables (SST, NO3, Nutricline, Nutlim) with interactions between Nutricline and Nutlim under model GS
 # 1. C:P
 b1_4vars_nutlim_modGS_CP <- function(data){
@@ -315,12 +320,13 @@ get_pval_gam <- function(b1) {
 make_CNP_pval_highlat <- function(data = POM_highlat_gam) {
   xvar1 <- "SST"
   xvar2 <- "logNO3"  
-  cp_pvalue_highlat <- get_pval_gam(b1_2vars(xvar1, xvar2, "logCP", data))
-  cp_pvalue_highlat<- R.utils::insert(cp_pvalue_highlat,ats=3,values=c("n.s.","n.s.",""))  
-  np_pvalue_highlat <- get_pval_gam(b1_2vars(xvar1, xvar2, "logNP", data))
-  np_pvalue_highlat<- R.utils::insert(np_pvalue_highlat,ats=3,values=c("n.s.","n.s.",""))  
-  cn_pvalue_highlat <- get_pval_gam(b1_2vars(xvar1, xvar2, "logCN", data))
-  cn_pvalue_highlat<- R.utils::insert(cn_pvalue_highlat,ats=3,values=c("n.s.","n.s.","")) 
+  xvar3 <- "Nutcline_1uM_interp" 
+  cp_pvalue_highlat <- get_pval_gam(b1_3vars(xvar1, xvar2, xvar3, "logCP", data))
+  cp_pvalue_highlat<- R.utils::insert(cp_pvalue_highlat,ats=4,values=c("n.s.",""))  
+  np_pvalue_highlat <- get_pval_gam(b1_3vars(xvar1, xvar2, xvar3, "logNP", data))
+  np_pvalue_highlat<- R.utils::insert(np_pvalue_highlat,ats=4,values=c("n.s.",""))  
+  cn_pvalue_highlat <- get_pval_gam(b1_3vars(xvar1, xvar2, xvar3, "logCN", data))
+  cn_pvalue_highlat<- R.utils::insert(cn_pvalue_highlat,ats=4,values=c("n.s.","")) 
   CNP_highlat_pval <- as.data.frame(cbind(cp_pvalue_highlat,np_pvalue_highlat,cn_pvalue_highlat))
   rownames(CNP_highlat_pval) <- c("SST", "Nitrate","Nutricline", "Nutricline x Nutlim","Total")
   colnames(CNP_highlat_pval) <- c('C:P','N:P','C:N')  
@@ -341,20 +347,21 @@ make_CNP_pval_lowlat <- function(data = POM_lowlat_gam) {
   CNP_lowlat_pval
 }
 
-# Function to calculate deviance explained in high latitudes with 2 variables
-calc_devexpl_highlat <- function(xvar1, xvar2, yvar, data) {
-  result_highlat <- deviance2variables(xvar1, xvar2, yvar, data)
-  result_highlat<- R.utils::insert(result_highlat,ats=3,values=c(0,0))  
+# Function to calculate deviance explained in high latitudes with 3 variables (SST, NO3, Nutricline)
+calc_devexpl_highlat <- function(xvar1, xvar2, xvar3, yvar, data) {
+  result_highlat <- deviance3variables(xvar1, xvar2, xvar3, yvar, data)
+  result_highlat<- R.utils::insert(result_highlat,ats=4,values=c(0))  
   result_highlat
 }
 
 # Function to make CNP deviance explained summary table for high latitude
 make_CNP_devexpl_highlat <- function(data = POM_highlat_gam) {
   xvar1 <- "SST"
-  xvar2 <- "logNO3"  
-  result_cp_highlat <- calc_devexpl_highlat(xvar1, xvar2, "logCP", data)
-  result_np_highlat <- calc_devexpl_highlat(xvar1, xvar2, "logNP", data)
-  result_cn_highlat <- calc_devexpl_highlat(xvar1, xvar2, "logCN", data)
+  xvar2 <- "logNO3" 
+  xvar3 <- "Nutcline_1uM_interp"
+  result_cp_highlat <- calc_devexpl_highlat(xvar1, xvar2, xvar3, "logCP", data)
+  result_np_highlat <- calc_devexpl_highlat(xvar1, xvar2, xvar3, "logNP", data)
+  result_cn_highlat <- calc_devexpl_highlat(xvar1, xvar2, xvar3, "logCN", data)
   CNP_highlat_devexpl <- as.data.frame(cbind(result_cp_highlat[1:5],result_np_highlat[1:5],result_cn_highlat[1:5]))
   rownames(CNP_highlat_devexpl) <- c("SST", "Nitrate","Nutricline", "Nutricline x Nutlim",'Total')
   colnames(CNP_highlat_devexpl) <- c('C:P','N:P','C:N')  
