@@ -50,106 +50,46 @@ cv_mod <- function(data, stoich, npartition = 100, fractest = 0.2, file) {
       CNP_Nutcline_modS  = map(train,~gam(formula(modS$formula),method = "REML", family = "gaussian", data=.x)),
       CNP_Nutcline_modI  = map(train,~gam(formula(modI$formula),method = "REML", family = "gaussian", data=.x)),
       CNP_Nutcline_modC  = map(train,~gam(formula(modC$formula),method = "REML", family = "gaussian", data=.x))
-  ) %>%
+    ) %>%
     mutate(
       rmse_CNP_Nutcline_modG = map2_dbl(CNP_Nutcline_modG, test, ~rmse(model = .x, data = .y)),
       rmse_CNP_Nutcline_modGS = map2_dbl(CNP_Nutcline_modGS, test, ~rmse(model = .x, data = .y)),
       rmse_CNP_Nutcline_modGI = map2_dbl(CNP_Nutcline_modGI, test, ~rmse(model = .x, data = .y)),
       rmse_CNP_Nutcline_modS = map2_dbl(CNP_Nutcline_modS, test, ~rmse(model = .x, data = .y)),
       rmse_CNP_Nutcline_modI = map2_dbl(CNP_Nutcline_modI, test, ~rmse(model = .x, data = .y)),
-      rmse_CNP_Nutcline_modC = map2_dbl(CNP_Nutcline_modC, test, ~rmse(model = .x, data = .y))
-      )
-  
+      rmse_CNP_Nutcline_modC = map2_dbl(CNP_Nutcline_modC, test, ~rmse(model = .x, data = .y)),
+      rsq_train_CNP_Nutcline_modG = map2_dbl(CNP_Nutcline_modG, train, ~rsquare(model = .x, data = .y)),
+      rsq_train_CNP_Nutcline_modGS = map2_dbl(CNP_Nutcline_modGS, train, ~rsquare(model = .x, data = .y)),
+      rsq_train_CNP_Nutcline_modGI = map2_dbl(CNP_Nutcline_modGI, train, ~rsquare(model = .x, data = .y)),
+      rsq_train_CNP_Nutcline_modS = map2_dbl(CNP_Nutcline_modS, train, ~rsquare(model = .x, data = .y)),
+      rsq_train_CNP_Nutcline_modI = map2_dbl(CNP_Nutcline_modI, train, ~rsquare(model = .x, data = .y)),
+      rsq_train_CNP_Nutcline_modC = map2_dbl(CNP_Nutcline_modC, train, ~rsquare(model = .x, data = .y)),
+      rsq_test_CNP_Nutcline_modG = map2_dbl(CNP_Nutcline_modG, test, ~rsquare(model = .x, data = .y)),
+      rsq_test_CNP_Nutcline_modGS = map2_dbl(CNP_Nutcline_modGS, test, ~rsquare(model = .x, data = .y)),
+      rsq_test_CNP_Nutcline_modGI = map2_dbl(CNP_Nutcline_modGI, test, ~rsquare(model = .x, data = .y)),
+      rsq_test_CNP_Nutcline_modS = map2_dbl(CNP_Nutcline_modS, test, ~rsquare(model = .x, data = .y)),
+      rsq_test_CNP_Nutcline_modI = map2_dbl(CNP_Nutcline_modI, test, ~rsquare(model = .x, data = .y)),
+      rsq_test_CNP_Nutcline_modC = map2_dbl(CNP_Nutcline_modC, test, ~rsquare(model = .x, data = .y))
+    )
   cv_df <- cv_df %>%
-    dplyr :: select(starts_with("rmse_CNP")) %>%
+    dplyr :: select(starts_with("rmse_CNP"), 
+                    starts_with("rsq_train_CNP"),
+                    starts_with("rsq_test_CNP")) %>%
+    setNames(c("x1","x2","x3","x4","x5","x6",
+               "y1","y2","y3","y4","y5","y6",
+               "z1","z2","z3","z4","z5","z6")) %>%
     pivot_longer(
       everything(),
-      names_to = "model",
-      values_to = "rmse",
-      names_prefix = "rmse_CNP_")
-
-  cv_df$model <- factor(cv_df$model,levels = c("Nutcline_modG","Nutcline_modGS","Nutcline_modGI","Nutcline_modS","Nutcline_modI","Nutcline_modC"))
-
+      names_to = c(".value","model"),
+      names_pattern = "(.)(.)"
+    )
+  cv_df <- setNames(cv_df, c("model","rmse","rsq_train","rsq_test"))
+  cv_df$model <- factor(cv_df$model,levels = c("1","2","3","4","5","6"))
   levels(cv_df$model) <-c("modG","modGS","modGI","modS","modI","modC")
   saveRDS(cv_df, file)
   return(cv_df)
 }
 
-# POM_genomes_selected_gam_w_highlat <- POM_genomes_selected_gam_w_highlat %>%
-#   mutate_at(c("Nutlim"),
-#             replace_factor_na,
-#             factorname = "Fe-lim")
-# 
-# data <- POM_genomes_selected_gam
-# modG_CP <- b1_4vars_nutlim_modG_CP(data)
-# modGS_CP <- b1_4vars_nutlim_modGS_CP(data)
-# modGI_CP <- b1_4vars_nutlim_modGI_CP(data)
-# modS_CP <- b1_4vars_nutlim_modS_CP(data)
-# modI_CP <- b1_4vars_nutlim_modI_CP(data)
-# modC_CP <- b1_4vars_nutlim_modC_CP(data)
-# 
-# set.seed(1)  # Run to replicate
-# cv_df =
-#     crossv_mc(data= POM_genomes_selected_gam_w_highlat, 100, test = 0.2) %>%
-#     # crossv_mc(data= POM_genomes_selected_gam_w_highlat, 10, test = 0.2) %>%
-#     mutate(
-#         train = map(train, as_tibble),
-#         test = map(test, as_tibble))
-# cv_df =
-#   cv_df %>%
-#   mutate(
-#     CP_Nutcline_modG  = map(train,~gam(formula(modG_CP$formula),method = "REML", family = "gaussian", data=.x)),
-#     CP_Nutcline_modGS  = map(train,~gam(formula(modGS_CP$formula),method = "REML", family = "gaussian", data=.x)),
-#     CP_Nutcline_modGI = map(train,~gam(formula(modGI_CP$formula),method = "REML", family = "gaussian", data=.x)),
-#     CP_Nutcline_modS  = map(train,~gam(formula(modS_CP$formula),method = "REML", family = "gaussian", data=.x)),
-#     CP_Nutcline_modI  = map(train,~gam(formula(modI_CP$formula),method = "REML", family = "gaussian", data=.x)),
-#     CP_Nutcline_modC  = map(train,~gam(formula(modC_CP$formula),method = "REML", family = "gaussian", data=.x))
-# ) %>%
-#   mutate(
-#     rmse_CP_Nutcline_modG = map2_dbl(CP_Nutcline_modG, test, ~rmse(model = .x, data = .y)),
-#     rmse_CP_Nutcline_modGS = map2_dbl(CP_Nutcline_modGS, test, ~rmse(model = .x, data = .y)),
-#     rmse_CP_Nutcline_modGI = map2_dbl(CP_Nutcline_modGI, test, ~rmse(model = .x, data = .y)),
-#     rmse_CP_Nutcline_modS = map2_dbl(CP_Nutcline_modS, test, ~rmse(model = .x, data = .y)),
-#     rmse_CP_Nutcline_modI = map2_dbl(CP_Nutcline_modI, test, ~rmse(model = .x, data = .y)),
-#     rmse_CP_Nutcline_modC = map2_dbl(CP_Nutcline_modC, test, ~rmse(model = .x, data = .y))
-#     )
-# 
-# cv_df <- cv_df %>%
-#   dplyr :: select(starts_with("rmse_CP")) %>%
-#   pivot_longer(
-#     everything(),
-#     names_to = "model",
-#     values_to = "rmse",
-#     names_prefix = "rmse_CP_") 
-# 
-# cv_df$model <- factor(cv_df$model,levels = c("Nutcline_modG","Nutcline_modGS","Nutcline_modGI","Nutcline_modS","Nutcline_modI","Nutcline_modC"))
-# 
-# levels(cv_df$model) <-c("modG_CP","modGS_CP","modGI_CP","modS_CP","modI_CP","modC_CP")
-# 
-# figsx_cv_cp <- ggplot(cv_df,aes(x = model, y = rmse)) + geom_violin() + stat_summary(fun.data = mean_sdl, geom="point", size=4, color="red") + stat_summary(aes(label=round(..y..,3)), fun=mean, geom="text", size=6, vjust = -0.5) + ggtitle("C:P cross validation") 
-# figsx_cv_cp
-# 
-# Summary_table_CP <- AIC(
-#   modG_CP,
-#   modGS_CP,
-#   modGI_CP,
-#   modS_CP,
-#   modI_CP,
-#   modC_CP) %>%  
-#   rownames_to_column(var= "Model") %>% 
-#   mutate(deltaAIC = AIC - min(AIC)) %>%
-#   mutate(rmse = with(cv_df, tapply(rmse, model, mean)))
-# Summary_table_CP$R_squared<- c(
-#   summary(modG_CP)$r.sq,
-#   summary(modGS_CP)$r.sq,
-#   summary(modGI_CP)$r.sq,
-#   summary(modS_CP)$r.sq,
-#   summary(modI_CP)$r.sq,
-#   summary(modC_CP)$r.sq
-# )
-# 
-# Summary_table_CP <- Summary_table_CP %>% mutate_if(is.numeric, round, digits = 3) %>% arrange(AIC)
-# Summary_table_CP
 
 
 

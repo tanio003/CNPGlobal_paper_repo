@@ -124,7 +124,7 @@ clean_data_for_gam <- function(data) {
                                          Nutcline_1uM_interp = Nutricline_1uM_Interp) %>% dplyr::select(logCP, logNP, logCN,
                                                                               SST, logNO3, logPO4,
                                                                               Nutcline_1uM_interp, sp_Nutlim_CESM2,
-                                                                              absLatitude,
+                                                                              absLatitude,area_weights,
                                                                               contains("Nutlim")
                                           ) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% tidyr::drop_na(SST, logNO3, logPO4, Nutcline_1uM_interp) 
 
