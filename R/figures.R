@@ -229,10 +229,10 @@ make_fig_3g <- function(data_all,mod_CN) {
 
 make_fig_3b <- function(data_all,mod_CP) {
   mod_CP_Nitrate_pred <- make_mod_CNP_Nitrate_pred(data_all, mod_CP)
-  fig3b <- {ggplot(data = data_all, aes(log10(exp(logNO3_fill)), exp(logCP))) + 
+  fig3b <- {ggplot(data = data_all, aes(log10(exp(logNO3)), exp(logCP))) + 
       annotate("text", x=1.5*0.95, y=255*0.95, label= "(B)") +
       geom_jitter(aes(color = Nutlim), size = 0.45) +   
-      geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=log10(exp(logNO3_fill))),
+      geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=log10(exp(logNO3))),
               data=mod_CP_Nitrate_pred, 
               alpha=0.4, 
               inherit.aes=FALSE) +
@@ -253,10 +253,10 @@ make_fig_3b <- function(data_all,mod_CP) {
 
 make_fig_3e <- function(data_all,mod_NP) {
     mod_NP_Nitrate_pred <- make_mod_CNP_Nitrate_pred(data_all, mod_NP)
-    fig3e <- {ggplot(data = data_all, aes(log10(exp(logNO3_fill)), exp(logNP))) + 
+    fig3e <- {ggplot(data = data_all, aes(log10(exp(logNO3)), exp(logNP))) + 
         annotate("text", x=1.5*0.95, y=36*0.95, label= "(E)") +
         geom_jitter(aes(color = Nutlim), size = 0.45) +   
-        geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=log10(exp(logNO3_fill))),
+        geom_ribbon(aes(ymin=exp(fit -2*se.fit), ymax=exp(fit +2*se.fit), x=log10(exp(logNO3))),
               data=mod_NP_Nitrate_pred, 
               alpha=0.4, 
               inherit.aes=FALSE) +
@@ -280,10 +280,10 @@ make_fig_3h <- function(data_all,mod_CN) {
   # Tease it so that the shading does not go below C:N of 5 for display
   cn_shade_min <- exp(mod_CN_Nitrate_pred$fit - 2*mod_CN_Nitrate_pred$se.fit)
   cn_shade_min <- pmax(cn_shade_min,rep(5,length(cn_shade_min)))
-  fig3h <- {ggplot(data = data_all, aes(log10(exp(logNO3_fill)), exp(logCN))) + 
+  fig3h <- {ggplot(data = data_all, aes(log10(exp(logNO3)), exp(logCN))) + 
       annotate("text", x=1.5*0.95, y=9*0.95, label= "(H)") +
       geom_jitter(aes(color = Nutlim), size = 0.45) +   
-      geom_ribbon(aes(ymin=cn_shade_min, ymax=exp(fit +2*se.fit), x=log10(exp(logNO3_fill))),
+      geom_ribbon(aes(ymin=cn_shade_min, ymax=exp(fit +2*se.fit), x=log10(exp(logNO3))),
               data=mod_CN_Nitrate_pred, 
               alpha=0.4, 
               inherit.aes=FALSE) +
@@ -303,10 +303,10 @@ make_fig_3h <- function(data_all,mod_CN) {
 make_fig_3c <- function(data_all,mod_CP_Nutcline_Nutlim_modGS) {
   mod_CP_Nutcline_Nutlim_pred <- make_mod_CNP_Nutcline_Nutlim_pred(data_all,
                                                                  mod_CP_Nutcline_Nutlim_modGS)
-  fig3c <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logCP))) + 
+  fig3c <- {ggplot(data = data_all, aes(Nutcline_1uM_interp, exp(logCP))) + 
       annotate("text", x=210*0.95, y=255*0.95, label= "(C)") +
       geom_jitter(aes(color = Nutlim), size = 0.45, alpha = 1.0) +   
-      geom_line(aes(x = Nutcline_GLODAP_1um, y=exp(fit), group = Nutlim, color = Nutlim), data=mod_CP_Nutcline_Nutlim_pred, cex = 0.75) + 
+      geom_line(aes(x = Nutcline_1uM_interp, y=exp(fit), group = Nutlim, color = Nutlim), data=mod_CP_Nutcline_Nutlim_pred, cex = 0.75) + 
       coord_cartesian(xlim = c(0,210), ylim = c(60, 255)) + 
       xlab("") +
       ylab("") +
@@ -324,10 +324,10 @@ make_fig_3c <- function(data_all,mod_CP_Nutcline_Nutlim_modGS) {
 make_fig_3f <- function(data_all, mod_NP_Nutcline_Nutlim_modGS) {
   mod_NP_Nutcline_Nutlim_pred <- make_mod_CNP_Nutcline_Nutlim_pred(data_all,
                                                                  mod_NP_Nutcline_Nutlim_modGS)
-  fig3f <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logNP))) +
+  fig3f <- {ggplot(data = data_all, aes(Nutcline_1uM_interp, exp(logNP))) +
       annotate("text", x=210*0.95, y=36*0.95, label= "(F)") +
       geom_jitter(aes(color = Nutlim), size = 0.45, alpha = 1.0) +   
-      geom_line(aes(x = Nutcline_GLODAP_1um, y=exp(fit), group = Nutlim, color = Nutlim), data=mod_NP_Nutcline_Nutlim_pred, cex = 0.75) + 
+      geom_line(aes(x = Nutcline_1uM_interp, y=exp(fit), group = Nutlim, color = Nutlim), data=mod_NP_Nutcline_Nutlim_pred, cex = 0.75) + 
       coord_cartesian(xlim = c(0,210), ylim = c(10, 36)) + 
       xlab("") +
       ylab("") +
@@ -345,10 +345,10 @@ make_fig_3f <- function(data_all, mod_NP_Nutcline_Nutlim_modGS) {
 make_fig_3i <- function(data_all, mod_CN_Nutcline_Nutlim_modGS) {
   mod_CN_Nutcline_Nutlim_pred <- make_mod_CNP_Nutcline_Nutlim_pred(data_all,
                                                                  mod_CN_Nutcline_Nutlim_modGS)
-  fig3i <- {ggplot(data = data_all, aes(Nutcline_GLODAP_1um, exp(logCN))) +
+  fig3i <- {ggplot(data = data_all, aes(Nutcline_1uM_interp, exp(logCN))) +
       annotate("text", x=210*0.95, y=9*0.95, label= "(I)") +
       geom_jitter(aes(color = Nutlim), size = 0.45, alpha = 1.0) +
-      geom_line(aes(x = Nutcline_GLODAP_1um, y=exp(fit), group = Nutlim, color = Nutlim), data=mod_CN_Nutcline_Nutlim_pred, cex = 0.75) +
+      geom_line(aes(x = Nutcline_1uM_interp, y=exp(fit), group = Nutlim, color = Nutlim), data=mod_CN_Nutcline_Nutlim_pred, cex = 0.75) +
       coord_cartesian(xlim = c(0,210), ylim = c(5, 9.0)) +
       xlab("Nutricline (m)") +
       ylab("") +
@@ -1301,9 +1301,9 @@ make_fig_delcnp_driver <- function(dest,
 # Function to plot C:P under different nutrient limitation under varying Nutricline for a given model and prediction data with observation
 plot_CP_pred_Nutcline_nutlim <- function(mod_CP_pred, data, model_name) {
   data <- data %>% drop_na(Nutlim)
-  {ggplot(data, aes(x=Nutcline_GLODAP_1um, y=exp(logCP), group=Nutlim)) +
+  {ggplot(data, aes(x=Nutcline_1uM_interp, y=exp(logCP), group=Nutlim)) +
   facet_wrap(~Nutlim, drop = T) +
-  geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_GLODAP_1um),
+  geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_1uM_interp),
               data=mod_CP_pred, 
               alpha=0.3, 
               inherit.aes=FALSE) +
@@ -1324,9 +1324,9 @@ plot_CP_pred_Nutcline_nutlim <- function(mod_CP_pred, data, model_name) {
 # Function to plot N:P under different nutrient limitation under varying Nutricline for a given model and prediction data with observation
 plot_NP_pred_Nutcline_nutlim <- function(mod_NP_pred, data, model_name) {
   data <- data %>% drop_na(Nutlim)
-  {ggplot(data, aes(x=Nutcline_GLODAP_1um, y=exp(logNP), group=Nutlim)) +
+  {ggplot(data, aes(x=Nutcline_1uM_interp, y=exp(logNP), group=Nutlim)) +
   facet_wrap(~Nutlim) +
-  geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_GLODAP_1um),
+  geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_1uM_interp),
               data=mod_NP_pred, 
               alpha=0.3, 
               inherit.aes=FALSE) +
@@ -1347,9 +1347,9 @@ plot_NP_pred_Nutcline_nutlim <- function(mod_NP_pred, data, model_name) {
 # Function to plot C:N under different nutrient limitation under varying Nutricline for a given model and prediction data with observation
 plot_CN_pred_Nutcline_nutlim <- function(mod_CN_pred, data, model_name) {
   data <- data %>% drop_na(Nutlim)
-  {ggplot(data, aes(x=Nutcline_GLODAP_1um, y=exp(logCN), group=Nutlim)) +
+  {ggplot(data, aes(x=Nutcline_1uM_interp, y=exp(logCN), group=Nutlim)) +
   facet_wrap(~Nutlim) +
-  geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_GLODAP_1um),
+  geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_1uM_interp),
               data=mod_CN_pred, 
               alpha=0.3, 
               inherit.aes=FALSE) +
@@ -1371,9 +1371,9 @@ make_plot_CNP_pred_Nutcline_nutlim <- function(dest,
   # Reorder factor level in nutrient limitation so P-limiation is plotted last.
   data$Nutlim <- factor(data$Nutlim, levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
   mod_CNP_pred <- with(data,
-                      expand.grid(Nutcline_GLODAP_1um =seq(min(0), max(300), length=300),
+                      expand.grid(Nutcline_1uM_interp =seq(min(0), max(300), length=300),
                                   SST= mean(data$SST),
-                                  logNO3_fill = mean(data$logNO3_fill),
+                                  logNO3 = mean(data$logNO3),
                                   Nutlim=levels(Nutlim)))
                                   # SST= 18))
   mod_CNP_pred <- pred_CNP_Nutcline_nutlim(mod_CNP,mod_CNP_pred)

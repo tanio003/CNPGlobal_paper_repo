@@ -189,10 +189,19 @@ clean_data_for_corr <- function(POM_all) {
                   absLatitude, SST, logNO3, logPO4,
                   logFeT, Nutcline_1uM_interp, MLD_Holte17,
                   MLPAR, CHLOR_a_MODIS,
-                  frac_dia_NOBM, frac_coc_NOBM, frac_chloro_NOBM, frac_cya_NOBM) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) %>% drop_na(absLatitude, SST, logNO3, logPO4,
-                                                                                                                                                                               logFeT, Nutcline_1uM_interp, MLD_Holte17,
-                                                                                                                                                                               MLPAR, CHLOR_a_MODIS,
-                                                                                                                                                                               frac_dia_NOBM, frac_coc_NOBM, frac_cya_NOBM, frac_chloro_NOBM)
+                  frac_dia_NOBM, frac_coc_NOBM, frac_chloro_NOBM, frac_cya_NOBM) %>% drop_na(logCP, logNP, logCN) %>% replace_with_na_all(condition = ~.x == -Inf) # %>% drop_na(absLatitude, 
+                                                                                                                                                                   #            SST, 
+                                                                                                                                                                   #            logNO3, 
+                                                                                                                                                                  #             logPO4,
+                                                                                                                                                                  #             logFeT, 
+                                                                                                                                                                  #             Nutcline_1uM_interp, 
+                                                                                                                                                                  #             MLD_Holte17,
+                                                                                                                                                                  #             MLPAR, 
+                                                                                                                                                                  #             CHLOR_a_MODIS,
+                                                                                                                                                                  #             frac_dia_NOBM, 
+                                                                                                                                                                  #             frac_coc_NOBM, 
+                                                                                                                                                                  #             frac_cya_NOBM, 
+                                                                                                                                                                  #             frac_chloro_NOBM)
   scaled.POM_all_corr <- data.frame(scale(POM_all_corr[,1:ncol(POM_all_corr)]))
 }
 
@@ -200,7 +209,7 @@ clean_data_for_corr <- function(POM_all) {
 M.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE, colnames = FALSE) {
   # if (highlat) {
   # For nutricline manually assign value of 0
-  # scaled.POM_all_corr$Nutcline_GLODAP_1um <- rep(0,length(scaled.POM_all_corr$Nutcline_GLODAP_1um))
+  # scaled.POM_all_corr$Nutcline_1uM_interp <- rep(0,length(scaled.POM_all_corr$Nutcline_1uM_interp))
   # }
   M.scaled.POM_corr <- cor(scaled.POM_all_corr,
                                   method = c("pearson"), 
@@ -229,7 +238,7 @@ M.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE, colnames = FALSE) {
 testRes.POM_corr <- function(scaled.POM_all_corr, highlat = FALSE) {
   # if (highlat) {
   # # For nutricline manually assign value of 0
-  # scaled.POM_all_corr$Nutcline_GLODAP_1um <- rep(0,length(scaled.POM_all_corr$Nutcline_GLODAP_1um))
+  # scaled.POM_all_corr$Nutcline_1uM_interp <- rep(0,length(scaled.POM_all_corr$Nutcline_1uM_interp))
   # } 
   M.scaled.POM_corr <- cor(scaled.POM_all_corr,
                                   method = c("pearson"), 
@@ -264,9 +273,9 @@ b1_2vars <- function(xvar1, xvar2, yvar, data) {
 # 1. C:P
 b1_4vars_nutlim_modGS_CP <- function(data){
   b1 <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3_fill, bs = "tp", k = 4) +
-              s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+              s(logNO3, bs = "tp", k = 4) +
+              s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
+              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
             data = data, method = "REML", family = "gaussian", na.action = na.omit)
   b1
   #Nutlim_effect_cnp_gam_summary(b1) # For conducting Tukey HSD 
@@ -274,9 +283,9 @@ b1_4vars_nutlim_modGS_CP <- function(data){
 # 2. N:P
 b1_4vars_nutlim_modGS_NP <- function(data){
   b1 <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3_fill, bs = "tp", k = 4) +
-              s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+              s(logNO3, bs = "tp", k = 4) +
+              s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
+              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
             data = data, method = "REML", family = "gaussian", na.action = na.omit)
   b1
   #Nutlim_effect_cnp_gam_summary(b1) # For conducting Tukey HSD 
@@ -284,9 +293,9 @@ b1_4vars_nutlim_modGS_NP <- function(data){
 # 3. C:N
 b1_4vars_nutlim_modGS_CN <- function(data){
   b1 <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3_fill, bs = "tp", k = 4) +
-              s(Nutcline_GLODAP_1um, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_GLODAP_1um, Nutlim, bs = "fs", k = 4, m = 2),
+              s(logNO3, bs = "tp", k = 4) +
+              s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
+              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
             data = data, method = "REML", family = "gaussian", na.action = na.omit)
   b1
   #Nutlim_effect_cnp_gam_summary(b1) # For conducting Tukey HSD 
@@ -305,7 +314,7 @@ get_pval_gam <- function(b1) {
 # Function to make CNP gam p-value summary table for high latitude
 make_CNP_pval_highlat <- function(data = POM_highlat_gam) {
   xvar1 <- "SST"
-  xvar2 <- "logNO3_fill"  
+  xvar2 <- "logNO3"  
   cp_pvalue_highlat <- get_pval_gam(b1_2vars(xvar1, xvar2, "logCP", data))
   cp_pvalue_highlat<- R.utils::insert(cp_pvalue_highlat,ats=3,values=c("n.s.","n.s.",""))  
   np_pvalue_highlat <- get_pval_gam(b1_2vars(xvar1, xvar2, "logNP", data))
@@ -342,7 +351,7 @@ calc_devexpl_highlat <- function(xvar1, xvar2, yvar, data) {
 # Function to make CNP deviance explained summary table for high latitude
 make_CNP_devexpl_highlat <- function(data = POM_highlat_gam) {
   xvar1 <- "SST"
-  xvar2 <- "logNO3_fill"  
+  xvar2 <- "logNO3"  
   result_cp_highlat <- calc_devexpl_highlat(xvar1, xvar2, "logCP", data)
   result_np_highlat <- calc_devexpl_highlat(xvar1, xvar2, "logNP", data)
   result_cn_highlat <- calc_devexpl_highlat(xvar1, xvar2, "logCN", data)
@@ -369,11 +378,11 @@ make_CNP_devexpl_lowlat <- function(data = POM_lowlat_gam) {
 # Function to make GAM models with default parameter settings with no nutrient limitation effect
 # Models are saved as global functions 
 make_mod_CNP_no_Nutlim <- function(data_all) {
-  mod_CP <-  gam(logCP ~ s(logNO3_fill) + s(SST) + s(Nutcline_GLODAP_1um),
+  mod_CP <-  gam(logCP ~ s(logNO3) + s(SST) + s(Nutcline_1uM_interp),
                        data  = data_all, method = "REML", family = "gaussian")
-  mod_NP <-  gam(logNP ~ s(logNO3_fill) + s(SST) + s(Nutcline_GLODAP_1um),
+  mod_NP <-  gam(logNP ~ s(logNO3) + s(SST) + s(Nutcline_1uM_interp),
                        data  = data_all, method = "REML", family = "gaussian")
-  mod_CN <-  gam(logCN ~ s(logNO3_fill) + s(SST) + s(Nutcline_GLODAP_1um),
+  mod_CN <-  gam(logCN ~ s(logNO3) + s(SST) + s(Nutcline_1uM_interp),
                        data  = data_all, method = "REML", family = "gaussian")
   mod_CNP <- list("mod_CP"= mod_CP, "mod_NP" = mod_NP, "mod_CN" = mod_CN)
   return(mod_CNP)
@@ -383,8 +392,8 @@ make_mod_CNP_no_Nutlim <- function(data_all) {
 make_mod_CNP_SST_pred <- function(data_all, mod_CNP) {
   mod_CNP_SST_pred <- with(data_all,
                       expand.grid(SST=seq(min(SST), max(35), length=100),
-                                  Nutcline_GLODAP_1um = mean(data_all$Nutcline_GLODAP_1um),
-                                  logNO3_fill = mean(data_all$logNO3_fill)))
+                                  Nutcline_1uM_interp = mean(data_all$Nutcline_1uM_interp),
+                                  logNO3 = mean(data_all$logNO3)))
   mod_CNP_SST_pred <- cbind(mod_CNP_SST_pred,
                        predict(mod_CNP, 
                                mod_CNP_SST_pred, 
@@ -396,8 +405,8 @@ make_mod_CNP_SST_pred <- function(data_all, mod_CNP) {
 # Function to make Nitrate based gam prediction of CNP (Nutricline and SST kept constant)
 make_mod_CNP_Nitrate_pred <- function(data_all, mod_CNP) {
   mod_CNP_Nitrate_pred <- with(data_all,
-                      expand.grid(logNO3_fill=seq(min(-6), max(4), length=100),
-                                  Nutcline_GLODAP_1um = mean(data_all$Nutcline_GLODAP_1um),
+                      expand.grid(logNO3=seq(min(-6), max(4), length=100),
+                                  Nutcline_1uM_interp = mean(data_all$Nutcline_1uM_interp),
                                   SST= mean(data_all$SST)))
   mod_CNP_Nitrate_pred <- cbind(mod_CNP_Nitrate_pred,
                        predict(mod_CNP, 
@@ -431,9 +440,9 @@ pred_CNP_Nutcline_nutlim <- function(model,pred_data) {
 # Function to make Nutricline x Nutlim based gam prediction of CNP (Nitrate and SST kept constant)
 make_mod_CNP_Nutcline_Nutlim_pred <- function(data_all, mod_CNP_Nutcline_Nutlim_modGS) {
   mod_CNP_Nutcline_Nutlim_pred <- with(data_all,
-                      expand.grid(Nutcline_GLODAP_1um =seq(min(0), max(300), length=300),
+                      expand.grid(Nutcline_1uM_interp =seq(min(0), max(300), length=300),
                                   SST= mean(data_all$SST),
-                                  logNO3_fill = mean(data_all$logNO3_fill),
+                                  logNO3 = mean(data_all$logNO3),
                                   Nutlim=levels(Nutlim)))
   # mod_CNP_Nutcline_Nutlim_pred <- cbind(mod_CNP_Nutcline_Nutlim_pred,
   #                     predict(mod_CNP_Nutcline_Nutlim_modGS, 
@@ -546,33 +555,33 @@ make_cesm_var_array_for_gam <- function(sst_surf_historic,
   ## "_Nutlimonly" = change in Nutrient limitation only from the historic
   
   newd_historic_full = data.frame(SST = as.vector(sst_surf_historic),
-                  Nutcline_GLODAP_1um = as.vector(nutcline_historic),
-                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutcline_1uM_interp = as.vector(nutcline_historic),
+                  logNO3 = as.vector(log(nitrate_surf_historic)),
                   Nutlim = factor(as.vector(nutlim_historic), levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
                   )
   newd_SSP370_full = data.frame(SST = as.vector(sst_surf_SSP370),
-                  Nutcline_GLODAP_1um = as.vector(nutcline_SSP370),
-                  logNO3_fill = as.vector(log(nitrate_surf_SSP370)),
+                  Nutcline_1uM_interp = as.vector(nutcline_SSP370),
+                  logNO3 = as.vector(log(nitrate_surf_SSP370)),
                   Nutlim = factor(as.vector(nutlim_SSP370), 
                                   levels = c("P-lim","PN-colim", "N-lim","Fe-lim")))
   newd_SSP370_Tonly = data.frame(SST = as.vector(sst_surf_SSP370),
-                  Nutcline_GLODAP_1um = as.vector(nutcline_historic),        
-                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutcline_1uM_interp = as.vector(nutcline_historic),        
+                  logNO3 = as.vector(log(nitrate_surf_historic)),
                   Nutlim = factor(as.vector(nutlim_historic), 
                                   levels = c("P-lim","PN-colim", "N-lim","Fe-lim")))
   newd_SSP370_Nonly = data.frame(SST = as.vector(sst_surf_historic), 
-                  Nutcline_GLODAP_1um = as.vector(nutcline_historic),                  
-                  logNO3_fill = as.vector(log(nitrate_surf_SSP370)),
+                  Nutcline_1uM_interp = as.vector(nutcline_historic),                  
+                  logNO3 = as.vector(log(nitrate_surf_SSP370)),
                   Nutlim = factor(as.vector(nutlim_historic), 
                                   levels = c("P-lim","PN-colim", "N-lim","Fe-lim")))
   newd_SSP370_Nutclineonly = data.frame(SST = as.vector(sst_surf_historic), 
-                  Nutcline_GLODAP_1um = as.vector(nutcline_SSP370),                  
-                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutcline_1uM_interp = as.vector(nutcline_SSP370),                  
+                  logNO3 = as.vector(log(nitrate_surf_historic)),
                   Nutlim = factor(as.vector(nutlim_historic), 
                                   levels = c("P-lim","PN-colim", "N-lim","Fe-lim")))
   newd_SSP370_Nutlimonly = data.frame(SST = as.vector(sst_surf_historic),
-                  Nutcline_GLODAP_1um = as.vector(nutcline_historic), 
-                  logNO3_fill = as.vector(log(nitrate_surf_historic)),
+                  Nutcline_1uM_interp = as.vector(nutcline_historic), 
+                  logNO3 = as.vector(log(nitrate_surf_historic)),
                   Nutlim = factor(as.vector(nutlim_SSP370), 
                                   levels = c("P-lim","PN-colim", "N-lim","Fe-lim")))
   
@@ -630,7 +639,7 @@ sim_random_posterior <- function(model,m = 1000,n = 2000, data) {
   sim_model <- suppressWarnings(exp(simulate(model,
                                      nsim = m,
                                     seed = 101,
-                                         newdata = dplyr::select(data,c('SST','Nutcline_GLODAP_1um','logNO3_fill','Nutlim')))))
+                                         newdata = dplyr::select(data,c('SST','Nutcline_1uM_interp','logNO3','Nutlim')))))
    # Selecting 2000 models with replacement for each grid point
    sim_model<- sim_model[, sample(ncol(sim_model), n, replace = TRUE)]
 }
