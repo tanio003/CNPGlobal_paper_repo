@@ -51,6 +51,22 @@ plan  <-  drake::drake_plan(
                                                               filename_nutcline = 'GLODAPv2.2016b.nutcline_regrid.nc',
                                                               surfdepth = 30.0),
   nutcline_glodap_data = read_nutcline_glodap(glodap_filepath, 'GLODAPv2.2016b.nutcline_regrid.nc'),
+  
+  # Cross validation analysis to determine best hierarchical GAMS----------------
+    # Comment out if cv_CP.rda, cv_NP.rda, cv_CN.rda are already made
+    # From this, we use model GI throughout to describe nutricline x nutlim interaction 
+  # Option 1: Calculate them de novo (Takes about 5 minutes per cross validation) #
+  # cv_cp  = cv_mod(POM_genomes_selected_gam, "CP", npartition = 100, fractest = 0.2, 
+  #                file = "output/cv/cv_cp.rds"),
+  # cv_np  = cv_mod(POM_genomes_selected_gam, "NP", npartition = 100, fractest = 0.2, 
+  #                file = "output/cv/cv_np.rds"),
+  # cv_cn  = cv_mod(POM_genomes_selected_gam, "CN", npartition = 100, fractest = 0.2, 
+  #                file = "output/cv/cv_cn.rds"),
+  # Option 2: Load premade cv files  to save time #
+  cv_cp = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_cp.rds"),
+  cv_np = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_np.rds"),
+  cv_cn = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_cn.rds"),
+  
   # Analyses ---------------------------------------------
   CNP_global_mean = calc_cnp_global_mean(tibble(POM_all)),
   CNP_global_mean_binned = calc_cnp_global_mean(tibble(POM_all_binned)),
@@ -87,22 +103,6 @@ plan  <-  drake::drake_plan(
                                                           m = 1000,
                                                           n = 2000,
                                                           cesm_var_array_for_gam),
-  
-  # Cross validation of hierarchical GAMS ----------------
-  # Takes about 5 minutes per cross validation 
-  # Comment out if cv_CP.rda, cv_NP.rda, cv_CN.rda are already made
-  # Option 1: Calculate them de novo #
-  # cv_cp  = cv_mod(POM_genomes_selected_gam, "CP", npartition = 100, fractest = 0.2, 
-  #                file = "output/cv/cv_cp.rds"),
-  # cv_np  = cv_mod(POM_genomes_selected_gam, "NP", npartition = 100, fractest = 0.2, 
-  #                file = "output/cv/cv_np.rds"),
-  # cv_cn  = cv_mod(POM_genomes_selected_gam, "CN", npartition = 100, fractest = 0.2, 
-  #                file = "output/cv/cv_cn.rds"),
-  # Option 2: Load premade cv files  to save time #
-  cv_cp = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_cp.rds"),
-  cv_np = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_np.rds"),
-  cv_cn = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_cn.rds"),
-  
   # Figures ----------------------------------------------
   fig_out_folder = dir.create("output/figures/",
                               recursive = TRUE,
@@ -209,7 +209,19 @@ plan  <-  drake::drake_plan(
                                          maintitle = "Delta N:P",
                                          colbarbreak = seq(-5,5,1),
                                          colbarlimits = c(-6,6),
-                                         NP = TRUE),			    
+                                         NP = TRUE),	
+  sup_fig_1_pdf = make_plot_model_cv_CNP(file_out("output/figures/sup_fig_1.pdf"),
+                                                    fig_out_folder,
+                                                    cv_cp,
+                                                    "C:P cross validation"),
+  sup_fig_2_pdf = make_plot_model_cv_CNP(file_out("output/figures/sup_fig_2.pdf"),
+                                                    fig_out_folder,
+                                                    cv_np,
+                                                    "N:P cross validation"),
+  sup_fig_3_pdf = make_plot_model_cv_CNP(file_out("output/figures/sup_fig_3.pdf"),
+                                                    fig_out_folder,
+                                                    cv_cn,
+                                                    "C:N cross validation"),
   # Tables -----------------------------------------------
   tab_out_folder = {
     dir.create("output/tables/", recursive = TRUE, showWarnings = FALSE)

@@ -1392,6 +1392,20 @@ make_plot_CNP_pred_Nutcline_nutlim <- function(dest,
 ###############
 # SUPPLEMENTARY INFO FIGURES
 ###############
+# Function to make cross validation comparison violin plot
+make_plot_model_cv_CNP <- function(dest,
+                                   fig_out_folder,
+                                   cv_df,
+                                   plottitle) {
+  ggplot(cv_df,aes(x = model, y = rmse)) + 
+    geom_violin() + 
+    stat_summary(fun.data = mean_sdl, geom="point", size=4, color="red") + 
+    stat_summary(aes(label=round(..y..,3)), fun=mean, geom="text", size=6, vjust = -0.5) + 
+    ggtitle(plottitle) 
+  ggsave(dest,
+         width = 8, # The width of the plot in inches
+         height = 5)
+}
 
 
 # make_sp_fig_1 <- function(dest, fig_out_folder,POM_all) {

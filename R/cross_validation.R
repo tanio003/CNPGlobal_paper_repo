@@ -75,7 +75,6 @@ cv_mod <- function(data, stoich, npartition = 100, fractest = 0.2, file) {
   return(cv_df)
 }
 
-
 # POM_genomes_selected_gam_w_highlat <- POM_genomes_selected_gam_w_highlat %>%
 #   mutate_at(c("Nutlim"),
 #             replace_factor_na,
