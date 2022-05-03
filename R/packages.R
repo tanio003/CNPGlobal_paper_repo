@@ -29,5 +29,6 @@ library(ocedata) #
 library(cmocean) #
 library(zoo)
 library(modelr)
+library(gt)
 data("coastlineWorld")
 

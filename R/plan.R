@@ -271,6 +271,33 @@ plan  <-  drake::drake_plan(
                                      rownames = FALSE,
                                      tab_out_folder,
                                      "sp_table_9.csv")
+  },
+  sp_table_10 = {
+    make_cnp_cv_summary_table(POM_genomes_selected_gam, 
+                                    cv_cp,
+                              "CP",
+                              "C:P Summary",
+                                    rownames = FALSE,
+                                    tab_out_folder,
+                                    "sp_table_10.csv")
+  },
+  sp_table_11 = {
+    make_cnp_cv_summary_table(POM_genomes_selected_gam, 
+                                    cv_np,
+                              "NP",
+                              "N:P Summary",
+                                    rownames = FALSE,
+                                    tab_out_folder,
+                                    "sp_table_11.csv")
+  },
+  sp_table_12 = {
+    make_cnp_cv_summary_table(POM_genomes_selected_gam, 
+                                    cv_cn,
+                              "CN",
+                              "C:N Summary",
+                                    rownames = FALSE,
+                                    tab_out_folder,
+                                    "sp_table_12.csv")
   }
 
 

@@ -1331,11 +1331,11 @@ plot_NP_pred_Nutcline_nutlim <- function(mod_NP_pred, data, model_name) {
               alpha=0.3, 
               inherit.aes=FALSE) +
   xlim(0,210) + 
-  ylim(10, 36) +
-  coord_cartesian(xlim = c(0,210), ylim = c(10, 36)) + 
+  ylim(10, 37) +
+  coord_cartesian(xlim = c(0,210), ylim = c(10, 37)) + 
   scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
-  scale_y_continuous(breaks = c(12, 16, 20, 24, 28,32),
-                   labels = c(12, 16, 20, 24, 28,32)) +      
+  scale_y_continuous(breaks = c(12, 16, 20, 24, 28, 32, 36),
+                   labels = c(12, 16, 20, 24, 28,32, 36)) +      
   geom_jitter(aes(color = Nutlim), size = 0.8) +
   geom_line(aes(y=exp(fit)), data=mod_NP_pred) +
   ggtitle(model_name) + 

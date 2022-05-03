@@ -161,4 +161,70 @@ make_cnp_gam_cesm_summary_table <- function(cesm_lonlat_info, CNP_gam_cesm, ...)
   summary_cesm_pred_regional %>% mutate_if(is.numeric, round, digits = 1) %>% export_csv(...)
 }
 
+# Function to create summary table for cross validation of hierarchical GAM models
+make_cnp_cv_summary_table <- function(data, cv_df, stoich, tabletitle, ...) {
+  if (stoich == "CP") {
+    modG <- b1_4vars_nutlim_modG_CP(data)
+    modGS <- b1_4vars_nutlim_modGS_CP(data)
+    modGI <- b1_4vars_nutlim_modGI_CP(data)
+    modS <- b1_4vars_nutlim_modS_CP(data)
+    modI <- b1_4vars_nutlim_modI_CP(data)
+    modC <- b1_4vars_nutlim_modC_CP(data)
+  } else if (stoich == "NP") {
+    modG <- b1_4vars_nutlim_modG_NP(data)
+    modGS <- b1_4vars_nutlim_modGS_NP(data)
+    modGI <- b1_4vars_nutlim_modGI_NP(data)
+    modS <- b1_4vars_nutlim_modS_NP(data)
+    modI <- b1_4vars_nutlim_modI_NP(data)
+    modC <- b1_4vars_nutlim_modC_NP(data)
+  } else if (stoich == "CN") {
+    modG <- b1_4vars_nutlim_modG_CN(data)
+    modGS <- b1_4vars_nutlim_modGS_CN(data)
+    modGI <- b1_4vars_nutlim_modGI_CN(data)
+    modS <- b1_4vars_nutlim_modS_CN(data)
+    modI <- b1_4vars_nutlim_modI_CN(data)
+    modC <- b1_4vars_nutlim_modC_CN(data)
+  }
+  Summary_table <- AIC(
+    modG,
+    modGS,
+    modGI,
+    modS,
+    modI,
+    modC) %>%  
+    rownames_to_column(var= "Model") %>% 
+    mutate(deltaAIC = AIC - min(AIC)) %>%
+    mutate(rmse = with(cv_df, tapply(rmse, model, mean)))
+  Summary_table$R_squared<- c(
+    summary(modG)$r.sq,
+    summary(modGS)$r.sq,
+    summary(modGI)$r.sq,
+    summary(modS)$r.sq,
+    summary(modI)$r.sq,
+    summary(modC)$r.sq
+  )
+  Summary_table <- Summary_table %>% 
+    mutate_if(is.numeric, round, digits = 3) %>% arrange(AIC) %>%
+    gt() %>%
+    tab_header(
+      title = md(tabletitle)
+    ) %>% export_csv(...)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
