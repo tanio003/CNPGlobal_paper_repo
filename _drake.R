@@ -10,6 +10,8 @@
 source("R/packages.R") # Loads packages, e.g. library(drake).
 source("R/analyses.R") # Defines custom analysis code as a bunch of functions.
 source("R/deviance_variables.R") # Defines custom analysis code to calculate deviance explained in GAMs.
+source("R/hierarchical_gam.R") # Defines functions used in hierarchical GAMs and cross validation.
+source("R/cross_validation.R") # Defines functions used in cross validation.
 source("R/figures.R")  # Defines custom figures code as a bunch of functions.
 source("R/tables.R")   # Defines custom tables code as a bunch of functions.
 source("R/plan.R")     # Creates drake plan.

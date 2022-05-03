@@ -274,37 +274,8 @@ b1_3vars <- function(xvar1, xvar2, xvar3, yvar, data) {
   b1 <- gam(as.formula(paste(yvar, "~", "s(",xvar1,")","+", "s(",xvar2,")","+", "s(",xvar3,")")),data = data, method ="REML",na.action = na.omit)
 }
 
-# Functions to conduct GAM with 4 predetermined variables (SST, NO3, Nutricline, Nutlim) with interactions between Nutricline and Nutlim under model GS
-# 1. C:P
-b1_4vars_nutlim_modGS_CP <- function(data){
-  b1 <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3, bs = "tp", k = 4) +
-              s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit)
-  b1
-  #Nutlim_effect_cnp_gam_summary(b1) # For conducting Tukey HSD 
-}
-# 2. N:P
-b1_4vars_nutlim_modGS_NP <- function(data){
-  b1 <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3, bs = "tp", k = 4) +
-              s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit)
-  b1
-  #Nutlim_effect_cnp_gam_summary(b1) # For conducting Tukey HSD 
-}
-# 3. C:N
-b1_4vars_nutlim_modGS_CN <- function(data){
-  b1 <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3, bs = "tp", k = 4) +
-              s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit)
-  b1
-  #Nutlim_effect_cnp_gam_summary(b1) # For conducting Tukey HSD 
-}
+# # Functions to conduct GAM with 4 predetermined variables (SST, NO3, Nutricline, Nutlim) with interactions between Nutricline and Nutlim under model GS
+# In a separate file "hierarchical_gam.R"
 
 # Function to extract p-values from GAM and convert to significance symbols
 get_pval_gam <- function(b1) {
@@ -424,14 +395,17 @@ make_mod_CNP_Nitrate_pred <- function(data_all, mod_CNP) {
 } 
 
 # These are same gam functions used in Figure 2, so will recycle them for consistency
-make_mod_CNP_Nutcline_Nutlim_modGS <- function(data_all) {
-  mod_CP_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_CP(data_all)
-  mod_NP_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_NP(data_all)
-  mod_CN_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_CN(data_all)
-  mod_CNP_Nutcline_Nutlim_modGS <- list("mod_CP_Nutcline_Nutlim_modGS"= mod_CP_Nutcline_Nutlim_modGS, 
-                                        "mod_NP_Nutcline_Nutlim_modGS" = mod_NP_Nutcline_Nutlim_modGS, 
-                                        "mod_CN_Nutcline_Nutlim_modGS" = mod_CN_Nutcline_Nutlim_modGS)
-  return(mod_CNP_Nutcline_Nutlim_modGS)
+make_mod_CNP_Nutcline_Nutlim_mod <- function(data_all) {
+  # mod_CP_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_CP(data_all)
+  # mod_NP_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_NP(data_all)
+  # mod_CN_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_CN(data_all)
+  mod_CP_Nutcline_Nutlim_mod <- b1_4vars_nutlim_modGI_CP(data_all)
+  mod_NP_Nutcline_Nutlim_mod <- b1_4vars_nutlim_modGI_NP(data_all)
+  mod_CN_Nutcline_Nutlim_mod <- b1_4vars_nutlim_modGI_CN(data_all)
+  mod_CNP_Nutcline_Nutlim_mod <- list("mod_CP_Nutcline_Nutlim_mod"= mod_CP_Nutcline_Nutlim_mod, 
+                                        "mod_NP_Nutcline_Nutlim_mod" = mod_NP_Nutcline_Nutlim_mod, 
+                                        "mod_CN_Nutcline_Nutlim_mod" = mod_CN_Nutcline_Nutlim_mod)
+  return(mod_CNP_Nutcline_Nutlim_mod)
 }
 
 # Function to predict CNP under different nutrient limitation under varying SST for a given model and prediction data

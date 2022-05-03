@@ -1308,11 +1308,11 @@ plot_CP_pred_Nutcline_nutlim <- function(mod_CP_pred, data, model_name) {
               alpha=0.3, 
               inherit.aes=FALSE) +
   xlim(0,210) + 
-  ylim(60, 255) +   
-  coord_cartesian(xlim = c(0,210), ylim = c(60, 255)) + 
+  ylim(60, 280) +   
+  coord_cartesian(xlim = c(0,210), ylim = c(60, 280)) + 
   scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
-  scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225),
-                   labels = c(75, 100, 125, 150, 175, 200, 225)) +       
+  scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225, 250, 275),
+                   labels = c(75, 100, 125, 150, 175, 200, 225, 250, 275)) +       
   geom_jitter(aes(color = Nutlim), size = 0.8) +
   geom_line(aes(y=exp(fit)), data=mod_CP_pred) +
   ggtitle(model_name) + 
