@@ -278,60 +278,62 @@ deviance4variables_nutlim <- function(xvar1, xvar2, xvar3, xvar4, yvar, data) {
 
 #---------------------------------------------------------------
 # Function to calculate % deviance explained for 4 variable case:
-# This is specifically for model GS and C:P with SST, NO3, Nutricline and nutrient limitation
+# This is specifically for model GI and C:P with SST, NO3, Nutricline and nutrient limitation
 # For hierarchical GAM, refer to
 # Pedersen, E. J., Miller, D. L., Simpson, G. L., & Ross, N. (2019). Hierarchical generalized additive models in ecology: an introduction with mgcv. PeerJ, 7, e6876.
+# Treat nutrient limitation term as s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) + s(Nutlim, bs = "re", k = 4)
 #---------------------------------------------------------------
-deviance4variables_nutlim_modGS_CP <- function(data) {
+deviance4variables_nutlim_modGI_CP <- function(data) {
   b1 <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3, bs = "tp", k = 4) +
+              s(logNO3, bs = "tp", k = 4) +                               
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit)
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) + 
+              s(Nutlim, bs = "re", k = 4),
+            data, method = "REML", family = "gaussian", na.action = na.omit)
   b2 <- gam(logCP ~ s(logNO3, bs = "tp", k = 4) +
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,3,4)])
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,3,4,5,6,7,8)])
   b3 <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3,4)])
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3,4,5,6,7,8)])
   b4 <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
               s(logNO3, bs = "tp", k = 4) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2,4)])
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2,4,5,6,7,8)])
   b5 <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
               s(logNO3, bs = "tp", k = 4) +
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
             data = data, method = "REML", family = "gaussian", na.action = na.omit,sp = b1$sp[c(1,2,3)])
- 
+  
   b6 <- gam(logCP ~ s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3,4)])   
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3,4,5,6,7,8)])   
   b7 <- gam(logCP ~ s(logNO3, bs = "tp", k = 4) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,4)])  
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,4,5,6,7,8)])  
   b8 <- gam(logCP ~ s(logNO3, bs = "tp", k = 4) +
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,3)])
   b9 <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,4)])  
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,4,5,6,7,8)])  
   b10 <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
-              s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3)])  
+               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3)])  
   b11 <- gam(logCP ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3, bs = "tp", k = 4),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2)])  
+               s(logNO3, bs = "tp", k = 4),
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2)])  
   
-  b12 <- gam(logCP ~ s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(4)])   
+  b12 <- gam(logCP ~ s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(4,5,6,7,8)])   
   b13 <- gam(logCP ~ s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2), 
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3)])     
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3)])     
   b14 <- gam(logCP ~ s(logNO3, bs = "tp", k = 4),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2)])    
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2)])    
   b15 <- gam(logCP ~ s(SST, bs = "tp", k = 4),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1)])   
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1)])   
   
   b16 <- gam(logCP ~ 1,data = data, method = "REML")
   
@@ -380,60 +382,62 @@ deviance4variables_nutlim_modGS_CP <- function(data) {
 
 #---------------------------------------------------------------
 # Function to calculate % deviance explained for 4 variable case:
-# 4th variable is nutrient limitation so the bs = "re" needs to be used
-# This is specifically for model GS and N:P with SST, NO3, Nutricline and nutrient limitation
-# This function is identical to deviance4variables_nutlim_modGS_CP but for N:P
+# This is specifically for model GI and N:P with SST, NO3, Nutricline and nutrient limitation
+# For hierarchical GAM, refer to
+# Pedersen, E. J., Miller, D. L., Simpson, G. L., & Ross, N. (2019). Hierarchical generalized additive models in ecology: an introduction with mgcv. PeerJ, 7, e6876.
+# Treat nutrient limitation term as s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) + s(Nutlim, bs = "re", k = 4)
 #---------------------------------------------------------------
-deviance4variables_nutlim_modGS_NP <- function(data) {
+deviance4variables_nutlim_modGI_NP <- function(data) {
   b1 <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3, bs = "tp", k = 4) +
+              s(logNO3, bs = "tp", k = 4) +                               
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit)
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) + 
+              s(Nutlim, bs = "re", k = 4),
+            data, method = "REML", family = "gaussian", na.action = na.omit)
   b2 <- gam(logNP ~ s(logNO3, bs = "tp", k = 4) +
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,3,4)])
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,3,4,5,6,7,8)])
   b3 <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3,4)])
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3,4,5,6,7,8)])
   b4 <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
               s(logNO3, bs = "tp", k = 4) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2,4)])
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2,4,5,6,7,8)])
   b5 <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
               s(logNO3, bs = "tp", k = 4) +
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
             data = data, method = "REML", family = "gaussian", na.action = na.omit,sp = b1$sp[c(1,2,3)])
- 
+  
   b6 <- gam(logNP ~ s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3,4)])   
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3,4,5,6,7,8)])   
   b7 <- gam(logNP ~ s(logNO3, bs = "tp", k = 4) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,4)])  
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,4,5,6,7,8)])  
   b8 <- gam(logNP ~ s(logNO3, bs = "tp", k = 4) +
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,3)])
   b9 <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,4)])  
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,4,5,6,7,8)])  
   b10 <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
-              s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3)])  
+               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3)])  
   b11 <- gam(logNP ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3, bs = "tp", k = 4),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2)])  
+               s(logNO3, bs = "tp", k = 4),
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2)])  
   
-  b12 <- gam(logNP ~ s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(4)])   
+  b12 <- gam(logNP ~ s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(4,5,6,7,8)])   
   b13 <- gam(logNP ~ s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2), 
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3)])     
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3)])     
   b14 <- gam(logNP ~ s(logNO3, bs = "tp", k = 4),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2)])    
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2)])    
   b15 <- gam(logNP ~ s(SST, bs = "tp", k = 4),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1)])   
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1)])   
   
   b16 <- gam(logNP ~ 1,data = data, method = "REML")
   
@@ -482,60 +486,62 @@ deviance4variables_nutlim_modGS_NP <- function(data) {
 
 #---------------------------------------------------------------
 # Function to calculate % deviance explained for 4 variable case:
-# 4th variable is nutrient limitation so the bs = "re" needs to be used
-# This is specifically for model GS and C:N with SST, NO3, Nutricline and nutrient limitation
-# This function is identical to deviance4variables_nutlim_modGS_CP but for C:N
+# This is specifically for model GI and C:N with SST, NO3, Nutricline and nutrient limitation
+# For hierarchical GAM, refer to
+# Pedersen, E. J., Miller, D. L., Simpson, G. L., & Ross, N. (2019). Hierarchical generalized additive models in ecology: an introduction with mgcv. PeerJ, 7, e6876.
+# Treat nutrient limitation term as s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) + s(Nutlim, bs = "re", k = 4)
 #---------------------------------------------------------------
-deviance4variables_nutlim_modGS_CN <- function(data) {
+deviance4variables_nutlim_modGI_CN <- function(data) {
   b1 <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3, bs = "tp", k = 4) +
+              s(logNO3, bs = "tp", k = 4) +                               
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit)
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) + 
+              s(Nutlim, bs = "re", k = 4),
+            data, method = "REML", family = "gaussian", na.action = na.omit)
   b2 <- gam(logCN ~ s(logNO3, bs = "tp", k = 4) +
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,3,4)])
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,3,4,5,6,7,8)])
   b3 <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3,4)])
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3,4,5,6,7,8)])
   b4 <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
               s(logNO3, bs = "tp", k = 4) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2,4)])
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2,4,5,6,7,8)])
   b5 <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
               s(logNO3, bs = "tp", k = 4) +
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
             data = data, method = "REML", family = "gaussian", na.action = na.omit,sp = b1$sp[c(1,2,3)])
- 
+  
   b6 <- gam(logCN ~ s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3,4)])   
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3,4,5,6,7,8)])   
   b7 <- gam(logCN ~ s(logNO3, bs = "tp", k = 4) +
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,4)])  
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,4,5,6,7,8)])  
   b8 <- gam(logCN ~ s(logNO3, bs = "tp", k = 4) +
               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2,3)])
   b9 <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
-              s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,4)])  
+              s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,4,5,6,7,8)])  
   b10 <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
-              s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3)])  
+               s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2),
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,3)])  
   b11 <- gam(logCN ~ s(SST, bs = "tp", k = 4) + 
-              s(logNO3, bs = "tp", k = 4),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2)])  
+               s(logNO3, bs = "tp", k = 4),
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1,2)])  
   
-  b12 <- gam(logCN ~ s(Nutcline_1uM_interp, Nutlim, bs = "fs", k = 4, m = 2),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(4)])   
+  b12 <- gam(logCN ~ s(Nutcline_1uM_interp, by = Nutlim, bs = "tp", m = 1) +  s(Nutlim, bs = "re", k = 4),
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(4,5,6,7,8)])   
   b13 <- gam(logCN ~ s(Nutcline_1uM_interp, bs = "tp", k = 4, m = 2), 
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3)])     
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(3)])     
   b14 <- gam(logCN ~ s(logNO3, bs = "tp", k = 4),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2)])    
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(2)])    
   b15 <- gam(logCN ~ s(SST, bs = "tp", k = 4),
-            data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1)])   
+             data = data, method = "REML", family = "gaussian", na.action = na.omit, sp = b1$sp[c(1)])   
   
   b16 <- gam(logCN ~ 1,data = data, method = "REML")
   
@@ -581,8 +587,3 @@ deviance4variables_nutlim_modGS_CN <- function(data) {
   # Returning output  
   deviance_array <- c(dev.1_mean, dev.2_mean, dev.3_mean, dev.4_mean, totaldev_def,totaldev_calc)
 }
-
-
-
-
-

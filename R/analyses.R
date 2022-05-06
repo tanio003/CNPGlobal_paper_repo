@@ -280,6 +280,10 @@ b1_3vars <- function(xvar1, xvar2, xvar3, yvar, data) {
 # Function to extract p-values from GAM and convert to significance symbols
 get_pval_gam <- function(b1) {
   pvalue_gam <- p.adjust(summary(b1)$s.table[,4])
+  # select minimum p value out of NutclinexNutlim
+  pvalue_nut <- (pvalue_gam[4:7]) 
+  pvalue_nut <- pvalue_nut[which.min(pvalue_nut)]
+  pvalue_gam <- c(pvalue_gam[1:3], pvalue_nut)
   pvalue_gam <- ifelse(pvalue_gam < 0.001, "***", 
                         ifelse(pvalue_gam < 0.01, "**",
                                ifelse(pvalue_gam < 0.05, "*",
@@ -299,21 +303,21 @@ make_CNP_pval_highlat <- function(data = POM_highlat_gam) {
   cn_pvalue_highlat <- get_pval_gam(b1_3vars(xvar1, xvar2, xvar3, "logCN", data))
   cn_pvalue_highlat<- R.utils::insert(cn_pvalue_highlat,ats=4,values=c("n.s.","")) 
   CNP_highlat_pval <- as.data.frame(cbind(cp_pvalue_highlat,np_pvalue_highlat,cn_pvalue_highlat))
-  rownames(CNP_highlat_pval) <- c("SST", "Nitrate","Nutricline", "Nutricline x Nutlim","Total")
+  rownames(CNP_highlat_pval) <- c("SST", "Nitrate","Nutricline", "Nutcline x Nutlim","Total")
   colnames(CNP_highlat_pval) <- c('C:P','N:P','C:N')  
   CNP_highlat_pval
 }
 
 # Function to make CNP gam p-value summary table for low latitude
 make_CNP_pval_lowlat <- function(data = POM_lowlat_gam) {
-  cp_pvalue_lowlat <- get_pval_gam(b1_4vars_nutlim_modGS_CP(data))
+  cp_pvalue_lowlat <- get_pval_gam(b1_4vars_nutlim_modGI_CP(data))
   cp_pvalue_lowlat<- R.utils::insert(cp_pvalue_lowlat,ats=5,values=c(""))  
-  np_pvalue_lowlat <- get_pval_gam(b1_4vars_nutlim_modGS_NP(data))
+  np_pvalue_lowlat <- get_pval_gam(b1_4vars_nutlim_modGI_NP(data))
   np_pvalue_lowlat<- R.utils::insert(np_pvalue_lowlat,ats=5,values=c(""))  
-  cn_pvalue_lowlat <- get_pval_gam(b1_4vars_nutlim_modGS_CN(data))
+  cn_pvalue_lowlat <- get_pval_gam(b1_4vars_nutlim_modGI_CN(data))
   cn_pvalue_lowlat<- R.utils::insert(cn_pvalue_lowlat,ats=5,values=c(""))  
   CNP_lowlat_pval <- as.data.frame(cbind(cp_pvalue_lowlat,np_pvalue_lowlat,cn_pvalue_lowlat))
-  rownames(CNP_lowlat_pval) <- c("SST", "Nitrate","Nutricline", "Nutricline x Nutlim","Total")
+  rownames(CNP_lowlat_pval) <- c("SST", "Nitrate","Nutricline", "Nutcline x Nutlim","Total")
   colnames(CNP_lowlat_pval) <- c('C:P','N:P','C:N')  
   CNP_lowlat_pval
 }
@@ -334,18 +338,18 @@ make_CNP_devexpl_highlat <- function(data = POM_highlat_gam) {
   result_np_highlat <- calc_devexpl_highlat(xvar1, xvar2, xvar3, "logNP", data)
   result_cn_highlat <- calc_devexpl_highlat(xvar1, xvar2, xvar3, "logCN", data)
   CNP_highlat_devexpl <- as.data.frame(cbind(result_cp_highlat[1:5],result_np_highlat[1:5],result_cn_highlat[1:5]))
-  rownames(CNP_highlat_devexpl) <- c("SST", "Nitrate","Nutricline", "Nutricline x Nutlim",'Total')
+  rownames(CNP_highlat_devexpl) <- c("SST", "Nitrate","Nutricline", "Nutcline x Nutlim",'Total')
   colnames(CNP_highlat_devexpl) <- c('C:P','N:P','C:N')  
   round(CNP_highlat_devexpl, digits = 3)
 }
 
 # Function to make CNP deviance explained summary table for low latitude
 make_CNP_devexpl_lowlat <- function(data = POM_lowlat_gam) {
-  result_cp_lowlat <- deviance4variables_nutlim_modGS_CP(data)
-  result_np_lowlat <- deviance4variables_nutlim_modGS_NP(data)
-  result_cn_lowlat <- deviance4variables_nutlim_modGS_CN(data)
+  result_cp_lowlat <- deviance4variables_nutlim_modGI_CP(data)
+  result_np_lowlat <- deviance4variables_nutlim_modGI_NP(data)
+  result_cn_lowlat <- deviance4variables_nutlim_modGI_CN(data)
   CNP_lowlat_devexpl <- as.data.frame(cbind(result_cp_lowlat[1:5],result_np_lowlat[1:5],result_cn_lowlat[1:5]))
-  rownames(CNP_lowlat_devexpl) <- c("SST", "Nitrate","Nutricline", "Nutricline x Nutlim",'Total')
+  rownames(CNP_lowlat_devexpl) <- c("SST", "Nitrate","Nutricline", "Nutcline x Nutlim",'Total')
   colnames(CNP_lowlat_devexpl) <- c('C:P','N:P','C:N')  
   round(CNP_lowlat_devexpl, digits = 3)
 }
@@ -396,9 +400,6 @@ make_mod_CNP_Nitrate_pred <- function(data_all, mod_CNP) {
 
 # These are same gam functions used in Figure 2, so will recycle them for consistency
 make_mod_CNP_Nutcline_Nutlim_mod <- function(data_all) {
-  # mod_CP_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_CP(data_all)
-  # mod_NP_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_NP(data_all)
-  # mod_CN_Nutcline_Nutlim_modGS <- b1_4vars_nutlim_modGS_CN(data_all)
   mod_CP_Nutcline_Nutlim_mod <- b1_4vars_nutlim_modGI_CP(data_all)
   mod_NP_Nutcline_Nutlim_mod <- b1_4vars_nutlim_modGI_NP(data_all)
   mod_CN_Nutcline_Nutlim_mod <- b1_4vars_nutlim_modGI_CN(data_all)
