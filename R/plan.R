@@ -2,6 +2,7 @@ plan  <-  drake::drake_plan(
   # Data -------------------------------------------------
   POM_all = read.csv("data/data_Tanioka22_NatCom_POM_all.csv"),                           # all POM data after selection
   POM_genomes_selected = read.csv("data/data_Tanioka22_NatCom_POM_genomes_selected.csv"), # POM data paired with genome-based nut limitation
+  POM_ver1_surface_binned = read.csv("data/data_Tanioka22_NatCom_POM_ver1_surface_binned_1deg.csv"), # POM data version 1 surface binned
   # Data wrangling for various analyses ------------------
   POM_all_binned = bin_data_1by1(POM_all), 
   POM_genomes_selected_binned = bin_data_1by1(POM_genomes_selected), 
@@ -9,10 +10,13 @@ plan  <-  drake::drake_plan(
                                                                      POM_genomes_selected_binned),
   POM_all_gam = clean_data_for_gam(POM_all), 
   POM_genomes_selected_gam = clean_data_for_gam(POM_genomes_selected),
+  POM_ver1_surface_binned_gam = clean_data_for_gam(POM_ver1_surface_binned),
   POM_genomes_selected_gam_w_highlat = combine_data_global_gam(POM_all_gam,
 							       POM_genomes_selected_gam),
   POM_highlat_gam = POM_all_gam %>% sep_data_highlat(latitude = 45),
   POM_lowlat_gam = POM_genomes_selected_gam %>% sep_data_lowlat(latitude = 45),
+  POM_highlat_ver1_surface_binned_gam = POM_ver1_surface_binned_gam %>% sep_data_highlat(latitude = 45),
+  POM_lowlat_ver1_surface_binned_gam = POM_ver1_surface_binned_gam %>% sep_data_lowlat(latitude = 45),  
   scaled.POM_highlat_corr = clean_data_for_corr(sep_data_highlat(POM_all, latitude = 45)),
   scaled.POM_lowlat_corr = clean_data_for_corr(sep_data_lowlat(POM_all, latitude = 45)),
   # CESM2-LENS Data--------------------------------------
@@ -70,6 +74,7 @@ plan  <-  drake::drake_plan(
   # Analyses ---------------------------------------------
   CNP_global_mean = calc_cnp_global_mean(tibble(POM_all)),
   CNP_global_mean_binned = calc_cnp_global_mean(tibble(POM_all_binned)),
+  CNP_global_mean_ver1_surface_binned = calc_cnp_global_mean(tibble(POM_ver1_surface_binned)),
   M_POM_highlat_corr_selected = M.POM_corr(scaled.POM_highlat_corr,highlat = TRUE, 
 					   colnames = TRUE),
   M_POM_lowlat_corr_selected = M.POM_corr(scaled.POM_lowlat_corr,highlat = FALSE, 
