@@ -132,6 +132,7 @@ clean_data_for_gam <- function(data) {
     {
   data_for_gam$Nutlim = factor(data_for_gam$Nutlim,
                                      levels = c("P-lim","PN-colim", "N-lim","Fe-lim"))
+  data_for_gam <- data_for_gam %>% tidyr::drop_na(Nutlim)
   }
   data_for_gam
 }

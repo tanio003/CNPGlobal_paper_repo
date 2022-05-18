@@ -2,7 +2,8 @@ plan  <-  drake::drake_plan(
   # Data -------------------------------------------------
   POM_all = read.csv("data/data_Tanioka22_NatCom_POM_all.csv"),                           # all POM data after selection
   POM_genomes_selected = read.csv("data/data_Tanioka22_NatCom_POM_genomes_selected.csv"), # POM data paired with genome-based nut limitation
-  POM_ver1_surface_binned = read.csv("data/data_Tanioka22_NatCom_POM_ver1_surface_binned_1deg.csv"), # POM data version 1 surface binned
+  POM_ver1_surface_binned = read.csv("data/data_Tanioka22_NatCom_POM_ver1_surface_binned_1deg.csv") %>%
+    mutate(Nutlim = sp_Nutlim_CESM2), # POM data version 1 surface binned
   # Data wrangling for various analyses ------------------
   POM_all_binned = bin_data_1by1(POM_all), 
   POM_genomes_selected_binned = bin_data_1by1(POM_genomes_selected), 
@@ -16,7 +17,7 @@ plan  <-  drake::drake_plan(
   POM_highlat_gam = POM_all_gam %>% sep_data_highlat(latitude = 45),
   POM_lowlat_gam = POM_genomes_selected_gam %>% sep_data_lowlat(latitude = 45),
   POM_highlat_ver1_surface_binned_gam = POM_ver1_surface_binned_gam %>% sep_data_highlat(latitude = 45),
-  POM_lowlat_ver1_surface_binned_gam = POM_ver1_surface_binned_gam %>% sep_data_lowlat(latitude = 45),  
+  POM_lowlat_ver1_surface_binned_gam = POM_ver1_surface_binned_gam %>% sep_data_lowlat(latitude = 45),
   scaled.POM_highlat_corr = clean_data_for_corr(sep_data_highlat(POM_all, latitude = 45)),
   scaled.POM_lowlat_corr = clean_data_for_corr(sep_data_lowlat(POM_all, latitude = 45)),
   # CESM2-LENS Data--------------------------------------
@@ -85,6 +86,10 @@ plan  <-  drake::drake_plan(
   CNP_lowlat_gam_devexpl = make_CNP_devexpl_lowlat(POM_lowlat_gam),
   CNP_highlat_gam_pval =  make_CNP_pval_highlat(POM_highlat_gam),
   CNP_lowlat_gam_pval = make_CNP_pval_lowlat(POM_lowlat_gam),
+  CNP_highlat_ver1_gam_devexpl = make_CNP_devexpl_highlat(POM_highlat_ver1_surface_binned_gam),
+  CNP_lowlat_ver1_gam_devexpl = make_CNP_devexpl_lowlat(POM_lowlat_ver1_surface_binned_gam),
+  CNP_highlat_ver1_gam_pval =  make_CNP_pval_highlat(POM_highlat_ver1_surface_binned_gam),
+  CNP_lowlat_ver1_gam_pval = make_CNP_pval_lowlat(POM_lowlat_ver1_surface_binned_gam),
   mod_CNP_no_Nutlim = make_mod_CNP_no_Nutlim(POM_genomes_selected_gam_w_highlat),
   mod_CNP_Nutcline_Nutlim_mod = make_mod_CNP_Nutcline_Nutlim_mod(POM_genomes_selected_gam_w_highlat),
   mod_CNP_Nutcline_Nutlim_mod_for_gam_cesm = make_mod_CNP_Nutcline_Nutlim_mod(POM_genomes_selected_gam_w_highlat %>% 
