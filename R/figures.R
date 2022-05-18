@@ -110,22 +110,44 @@ make_fig_1 <- function(dest, fig_out_folder,POM_all) {
 	server$close()
 }
 
+# make_fig_2 <- function(dest,
+#                        fig_out_folder,
+#                        M.POM_highlat_corr_selected,
+#                        M.POM_lowlat_corr_selected,
+#                        testRes_selected_highlat,
+#                        testRes_selected_lowlat,
+#                        CNP_highlat_gam_devexpl,
+#                        CNP_lowlat_gam_devexpl) {
+#   pdf(dest, width = 5.5, height = 4)
+#   par(mfrow=c(2,2))
+#   p1 <- fig_2a(M.POM_highlat_corr_selected,testRes_selected_highlat, title_name = "Polar & Subpolar")
+#   p2 <- fig_2b(CNP_highlat_gam_devexpl)
+#   p3 <- fig_2a(M.POM_lowlat_corr_selected,testRes_selected_lowlat, title_name = "Tropical & Subtropical")
+#   p4 <- fig_2b(CNP_lowlat_gam_devexpl)
+#   dev.off()
+# }
 
-# Function to make Figure 2 in pdf (cosmetic treatments are done with Adobe Illustrator)
 make_fig_2 <- function(dest,
                        fig_out_folder,
                        M.POM_highlat_corr_selected,
-                       M.POM_lowlat_corr_selected,
                        testRes_selected_highlat,
-                       testRes_selected_lowlat,
                        CNP_highlat_gam_devexpl,
-                       CNP_lowlat_gam_devexpl) {
+                       title_name) {
   pdf(dest, width = 5.5, height = 4)
   par(mfrow=c(2,2))
-  p1 <- fig_2a(M.POM_highlat_corr_selected,testRes_selected_highlat, title_name = "Polar & Subpolar")
-  p2 <- fig_2b(CNP_highlat_gam_devexpl)
-  p3 <- fig_2a(M.POM_lowlat_corr_selected,testRes_selected_lowlat, title_name = "Tropical & Subtropical")
-  p4 <- fig_2b(CNP_lowlat_gam_devexpl)
+  p1 <- fig_2a(M.POM_highlat_corr_selected,testRes_selected_highlat, title_name = title_name)
+  p2 <- fig_2b_100p(CNP_highlat_gam_devexpl)
+  p3 <- fig_2a(M.POM_highlat_corr_selected,testRes_selected_highlat, title_name = title_name)
+  p4 <- fig_2b_100p(CNP_highlat_gam_devexpl)
+  dev.off()
+}
+
+make_fig_2b_only <- function(dest,
+                       fig_out_folder,
+                       CNP_highlat_gam_devexpl) {
+  pdf(dest, width = 4, height = 3)
+  # par(mfrow=c(2,2))
+  fig_2b_100p(CNP_highlat_gam_devexpl)
   dev.off()
 }
 
@@ -154,6 +176,27 @@ fig_2b <- function(CNP_highlat_gam_devexpl) {
           bty = "n", cex=0.75
         )
         )
+}
+
+fig_2b_100p <- function(CNP_highlat_gam_devexpl) {
+  data_percentage <- apply(CNP_highlat_gam_devexpl[1:4,], 2, function(x){x*100/sum(x,na.rm=T)})
+  fig <- barplot(data_percentage, width = c(0.5,0.5,0.5,0.5),
+                 col = brewer.pal(nrow(CNP_highlat_gam_devexpl[1:4,]), "Set1"),
+                 # font.axis=2,
+                 font.axis= 2,
+                 cex.axis = 0.75,
+                 cex.names = 0.75,
+                 las = 1,
+                 legend = c('SST', 'Nitrate', 'Nutricline', 'Nutricline x Nutlim'),
+                 xlim = c(0, ncol(CNP_highlat_gam_devexpl) + 0.2),
+                 ylim = c(0, 100),
+                 ylab = 'Explained Deviance',
+                 args.legend = list(
+                   x = ncol(CNP_highlat_gam_devexpl)*1.3,
+                   y = max(colSums(CNP_highlat_gam_devexpl[1:4,])) + 120,
+                   bty = "n", cex=0.75
+                 )
+  )
 }
 
 make_fig_3a <- function(data_all, mod_CP) {
