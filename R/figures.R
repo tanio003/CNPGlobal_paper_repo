@@ -446,8 +446,8 @@ make_fig_4 <- function(dest,
                        cesm_lonlat_info,
                        CNP_gam_cesm,
                        diffcp_full_PosCount_grid,
-		       plot_title_left,
-		       plot_title_right,
+		       plot_title_topleft,
+		       plot_title_topright,
 		       colbarbreak,
 		       colbartitle,
 		       colbarlimits,
@@ -457,7 +457,7 @@ make_fig_4 <- function(dest,
   lonlat_grid_lon <- cesm_lonlat_info$lonlat_grid_lon
   lonlat_grid_lat <- cesm_lonlat_info$lonlat_grid_lat
   
-  # Left = Delta C:P of model GS (full)
+  # Top Left = Delta C:P of model GS (full) 2D map
   pred_cp_SSP370_full <- CNP_gam_cesm$pred_cp_SSP370_full
   pred_cp_historic_full <- CNP_gam_cesm$pred_cp_historic_full
   if (NP) {
@@ -470,30 +470,39 @@ make_fig_4 <- function(dest,
   delcp_full_plot$lon <- as.vector(lonlat_grid_lon)
   delcp_full_plot$lat <- as.vector(lonlat_grid_lat)
   
-  fig_left <- ggplot(data = delcp_full_plot, aes(x = lon, y = lat)) +
+  regions <- as.vector(cesm_lonlat_info$lonlat_regions) %>% 
+    factor(levels = c("Polar", "Subpolar", "Subtropical","Tropical"))
+  
+  fig_topleft <- ggplot(data = delcp_full_plot, aes(x = lon, y = lat)) +
     geom_raster(aes(fill = value)) +
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
   xlab("Longitude") +
   ylab("Latitude") + 
+  scale_y_continuous(breaks=c(-70,-35, 0, 35, 70)) + 
   scale_fill_cmocean(name = "balance", na.value = "black",breaks = colbarbreak,limits=colbarlimits,discrete = FALSE) + 
-  ggtitle(plot_title_left) + 
+  ggtitle(plot_title_topleft) + 
   theme_bw(base_size = 10, base_family = "Helvetica") + 
   theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
           axis.text = element_text(colour = "black"),
           axis.ticks = element_line(colour = "black"), legend.position = "bottom") +
   guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75,title = colbartitle, title.position = "bottom"))
   
-  # Right = Model Confidence
+  # Top Right = Model Confidence 2D map
   modelconf_cp_full <- diffcp_full_PosCount_grid/2000*100
   modelconf_cp_full_plot <- reshape2::melt(modelconf_cp_full)
+  if (NP) {
+    modelconf_cp_full <- diffnp_full_PosCount_grid/2000*100
+    modelconf_cp_full_plot <- reshape2::melt(modelconf_np_full)    
+  }
   modelconf_cp_full_plot$lon <- as.vector(lonlat_grid_lon)
   modelconf_cp_full_plot$lat <- as.vector(lonlat_grid_lat)
   
-  fig_right <- ggplot(data = modelconf_cp_full_plot, aes(x = lon, y = lat)) +
+  fig_topright <- ggplot(data = modelconf_cp_full_plot, aes(x = lon, y = lat)) +
     geom_raster(aes(fill = value)) +
     coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
   labs(y = NULL) +
   xlab("Longitude") + 
+  scale_y_continuous(breaks=c(-70,-35, 0, 35, 70)) + 
   scale_fill_fermenter(direction = -1, 
                        palette = "PuOr", 
                        na.value = "black", 
@@ -507,27 +516,73 @@ make_fig_4 <- function(dest,
                                   "71%+",
                                   "86%+",
                                   "100%+")) +
-  ggtitle(plot_title_right) + 
+  ggtitle(plot_title_topright) + 
   theme_bw(base_size = 10, base_family = "Helvetica") + 
   theme(panel.border = element_rect(fill = NA, colour = "black", size = 1),
           axis.text = element_text(colour = "black"),
           axis.ticks = element_line(colour = "black"), legend.position = "bottom") +
   guides(fill = guide_colorbar(barwidth = 14, barheight = 0.75, title = "Model agreement", title.position = "bottom"))
   
+  # Put C:P changes, regions, and model agreement info into a single data-frame
+  df_fig4 <- data.frame(regions, as.vector(delcp_full), as.vector(modelconf_cp_full))
+  
+  # Bottom Left = Delta C:P of model GS (full) Violin Plot by regions
+  fig_bottomleft  <- {ggplot(data = df_fig4, mapping = aes(y = delcp_full, x = regions)) + 
+      geom_violin(aes(fill = regions), show.legend = FALSE) +
+      geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
+      ggtitle("(C)") + 
+      scale_fill_hue(direction = -1) + 
+      scale_x_discrete(limits=rev) + 
+      labs(y = 'DeltaC:P', x = '') + 
+      {if (NP) labs(y = 'DeltaN:P', x = '')} + 
+      # stat_summary(fun = "mean", geom="point",color = "black", width = 0.2) +
+      scale_y_continuous(breaks = c(-30, -20, -10, 0, 10, 20, 30), limits = c(-30, 30)) + 
+      {if(NP) scale_y_continuous(breaks = c(-6, -4, -2, 0, 2, 4, 6), limits = c(-6, 6))} + 
+      theme_bw() + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  } + coord_flip() + theme(axis.text.y = element_text(angle = 45))
+  
+  # Bottom Right = Model agreement C:P of model GS (full) Violin Plot by regions
+  fig_bottomright  <- {ggplot(data = df_fig4, mapping = aes(y = modelconf_cp_full, x = regions)) + 
+      geom_violin(aes(fill = regions), show.legend = FALSE) +
+      geom_hline(yintercept = 50, linetype = "dashed", color = "black") + 
+      ggtitle("(D)") + 
+      scale_fill_hue(direction = -1) + 
+      scale_x_discrete(limits=rev) + 
+      scale_y_continuous(breaks = c(0, 25, 50, 75, 100), 
+                         labels = c("100%-", "75%-", "50%-/50%+", "75%+", "100%+"),
+                         limits = c(0, 100)) + 
+      labs(y = 'Model agreement', x = '') + 
+      theme_bw() + 
+      theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  } + coord_flip() + theme(axis.text.y = element_text(angle = 45))
+  
   # Convert the figures to grobs
-  fig_left_grob <- ggplotGrob(fig_left)
-  fig_right_grob <- ggplotGrob(fig_right)
+  fig_topleft_grob <- ggplotGrob(fig_topleft)
+  fig_topright_grob <- ggplotGrob(fig_topright)
+  fig_bottomleft_grob <- ggplotGrob(fig_bottomleft)
+  fig_bottomright_grob <- ggplotGrob(fig_bottomright)
   gg <- ggplot() +
-  coord_equal(xlim = c(1, 10), ylim = c(1, 6), expand = F) +
-    annotation_custom(fig_left_grob,
-                      xmin = 1, xmax = 5.5, ymin = 1, ymax = 6) +  
-      annotation_custom(fig_right_grob,
-                      xmin = 5.5, xmax = 10, ymin = 1, ymax = 6) + 
+  # coord_equal(xlim = c(1, 10), ylim = c(1, 6), expand = F) +
+  coord_equal(xlim = c(1, 10), ylim = c(1, 8), expand = F) +
+    annotation_custom(fig_topleft_grob,
+                      # xmin = 1, xmax = 5.5, ymin = 1, ymax = 6) +  
+                      xmin = 1, xmax = 5.5, ymin = 4, ymax = 8) +  
+    annotation_custom(fig_topright_grob,
+                      # xmin = 5.5, xmax = 10, ymin = 1, ymax = 6) + 
+                      xmin = 5.5, xmax = 10, ymin = 4, ymax = 8) + 
+    annotation_custom(fig_bottomleft_grob,
+                      # xmin = 1, xmax = 5.5, ymin = 1, ymax = 6) +  
+                      xmin = 1, xmax = 5.5, ymin = 1, ymax = 4) +  
+    annotation_custom(fig_bottomright_grob,
+                      # xmin = 5.5, xmax = 10, ymin = 1, ymax = 6) + 
+                      xmin = 5.5, xmax = 10, ymin = 1, ymax = 4) + 
     theme(panel.border = element_blank())
   # gg
   ggsave(dest,
         width = 8, # The width of the plot in inches
-        height = 5)
+#        height = 5)
+        height = 8)
 
 }
 

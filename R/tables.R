@@ -53,7 +53,9 @@ merge_corr_pval <- function(odd_data, even_data, digits = 3) {
                                            "MLD", "pval",
                                 "MLPAR", "pval",
                                 "Chl-a", "pval",
-                                           "% Diatoms", "pval",
+                                "% Diatoms", "pval",
+                                "% Cocco", "pval",
+                                "% Chloro", "pval",
                                 "% Cyano","pval"
                                            ))
   newtable <- as.data.frame(newtable) 
