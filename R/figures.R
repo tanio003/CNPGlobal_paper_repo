@@ -7,6 +7,8 @@ gg_color_hue <- function(n) {
   hcl(h = hues, l = 65, c = 100)[1:n]
 }
 
+gg_color_hue_4_rbgp <- c(gg_color_hue(4)[1],gg_color_hue(4)[3], gg_color_hue(4)[2], gg_color_hue(4)[4])
+
 # Function to make cp_box plot
 cp_boxplot <- function(POM_all) {
   cp_box <- {ggplot(data = POM_all, mapping = aes(y = exp(logCP), x = region)) + 
@@ -1395,6 +1397,7 @@ make_fig_delcnp_driver <- function(dest,
 # Function to plot C:P under different nutrient limitation under varying Nutricline for a given model and prediction data with observation
 plot_CP_pred_Nutcline_nutlim <- function(mod_CP_pred, data, model_name) {
   data <- data %>% drop_na(Nutlim)
+  data$Nutlim <- factor(data$Nutlim, levels = c("P-lim","N-lim","PN-colim","Fe-lim"))
   {ggplot(data, aes(x=Nutcline_1uM_interp, y=exp(logCP), group=Nutlim)) +
   facet_wrap(~Nutlim, drop = T) +
   geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_1uM_interp),
@@ -1408,7 +1411,8 @@ plot_CP_pred_Nutcline_nutlim <- function(mod_CP_pred, data, model_name) {
   scale_y_continuous(breaks = c(75, 100, 125, 150, 175, 200, 225, 250, 275),
                    labels = c(75, 100, 125, 150, 175, 200, 225, 250, 275)) +       
   geom_jitter(aes(color = Nutlim), size = 0.8) +
-  geom_line(aes(y=exp(fit)), data=mod_CP_pred) +
+  geom_line(aes(y=exp(fit), color = Nutlim), data=mod_CP_pred, size = 0.75) +
+  scale_color_manual(values = gg_color_hue_4_rbgp)+
   ggtitle(model_name) + 
   labs(x = 'Nutricline (m)', y = 'C:P')} + 
   theme_bw() + 
@@ -1418,6 +1422,7 @@ plot_CP_pred_Nutcline_nutlim <- function(mod_CP_pred, data, model_name) {
 # Function to plot N:P under different nutrient limitation under varying Nutricline for a given model and prediction data with observation
 plot_NP_pred_Nutcline_nutlim <- function(mod_NP_pred, data, model_name) {
   data <- data %>% drop_na(Nutlim)
+  data$Nutlim <- factor(data$Nutlim, levels = c("P-lim","N-lim","PN-colim","Fe-lim"))
   {ggplot(data, aes(x=Nutcline_1uM_interp, y=exp(logNP), group=Nutlim)) +
   facet_wrap(~Nutlim) +
   geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_1uM_interp),
@@ -1431,7 +1436,8 @@ plot_NP_pred_Nutcline_nutlim <- function(mod_NP_pred, data, model_name) {
   scale_y_continuous(breaks = c(12, 16, 20, 24, 28, 32, 36),
                    labels = c(12, 16, 20, 24, 28,32, 36)) +      
   geom_jitter(aes(color = Nutlim), size = 0.8) +
-  geom_line(aes(y=exp(fit)), data=mod_NP_pred) +
+  geom_line(aes(y=exp(fit), color = Nutlim), data=mod_NP_pred, size = 0.75) +
+  scale_color_manual(values = gg_color_hue_4_rbgp)+
   ggtitle(model_name) + 
   labs(x = 'Nutricline (m)', y = 'N:P')} + 
   theme_bw() + 
@@ -1441,6 +1447,7 @@ plot_NP_pred_Nutcline_nutlim <- function(mod_NP_pred, data, model_name) {
 # Function to plot C:N under different nutrient limitation under varying Nutricline for a given model and prediction data with observation
 plot_CN_pred_Nutcline_nutlim <- function(mod_CN_pred, data, model_name) {
   data <- data %>% drop_na(Nutlim)
+  data$Nutlim <- factor(data$Nutlim, levels = c("P-lim","N-lim","PN-colim","Fe-lim"))
   {ggplot(data, aes(x=Nutcline_1uM_interp, y=exp(logCN), group=Nutlim)) +
   facet_wrap(~Nutlim) +
   geom_ribbon(aes(ymin=exp(fit - 2*se.fit), ymax=exp(fit + 2*se.fit), x=Nutcline_1uM_interp),
@@ -1451,7 +1458,8 @@ plot_CN_pred_Nutcline_nutlim <- function(mod_CN_pred, data, model_name) {
   ylim(5, 9) +
   coord_cartesian(xlim = c(0,210), ylim = c(5, 9)) + 
   geom_jitter(aes(color = Nutlim), size = 0.8) +
-  geom_line(aes(y=exp(fit)), data=mod_CN_pred) +
+  geom_line(aes(y=exp(fit), color = Nutlim), data=mod_CN_pred, size = 0.75) +
+  scale_color_manual(values = gg_color_hue_4_rbgp)+
   ggtitle(model_name) + 
   labs(x = 'Nutricline (m)', y = 'C:N')} + 
   theme_bw() + 
