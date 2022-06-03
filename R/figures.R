@@ -287,8 +287,8 @@ make_fig_3b <- function(data_all,mod_CP) {
               inherit.aes=FALSE) +
       geom_line(aes(y=exp(fit)), data=mod_CP_Nitrate_pred, cex = 0.75)+ 
       coord_cartesian(xlim = c(-1.0,1.5), ylim = c(60, 280)) + 
-      xlab("") +
-      ylab("") +
+      xlab("log10[NO3]") +
+      ylab("C:P") +
       xlim(-1.0,1.5) + 
       ylim(60,280) + 
       scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
@@ -296,7 +296,9 @@ make_fig_3b <- function(data_all,mod_CP) {
                    labels = c(75, 125, 175, 225, 275)) +     
       theme_bw(base_size = 12, base_family = "Helvetica") + 
       theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-    }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+    }  + 
+    # theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.text.y=element_blank()) + 
+    theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
   fig3b <- ggplotly(fig3b)
 } 
 
@@ -311,8 +313,8 @@ make_fig_3e <- function(data_all,mod_NP) {
               inherit.aes=FALSE) +
         geom_line(aes(y=exp(fit)), data=mod_NP_Nitrate_pred, cex = 0.75)+ 
         coord_cartesian(xlim = c(-1.0,1.5), ylim = c(10, 37)) + 
-        xlab("") +
-        ylab("") +
+        xlab("log10[NO3]") +
+        ylab("N:P") +
         xlim(-1.0,1.5) + 
         ylim(10,37) + 
         scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
@@ -320,7 +322,9 @@ make_fig_3e <- function(data_all,mod_NP) {
                    labels = c(12, 20, 28, 36)) +       
         theme_bw(base_size = 12, base_family = "Helvetica") + 
         theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-      }  + theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+      }  + 
+      # theme(axis.title.x=element_blank(), axis.text.x=element_blank(),axis.text.y=element_blank()) + 
+      theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
     fig3e <- ggplotly(fig3e)
 }  
 
@@ -330,7 +334,7 @@ make_fig_3h <- function(data_all,mod_CN) {
   cn_shade_min <- exp(mod_CN_Nitrate_pred$fit - 2*mod_CN_Nitrate_pred$se.fit)
   cn_shade_min <- pmax(cn_shade_min,rep(5,length(cn_shade_min)))
   fig3h <- {ggplot(data = data_all, aes(log10(exp(logNO3)), exp(logCN))) + 
-      annotate("text", x=1.5*0.95, y=9*0.95, label= "(H)") +
+      # annotate("text", x=1.5*0.95, y=9*0.95, label= "(H)") +
       geom_point(aes(color = Nutlim), size = 0.75) +   
       geom_ribbon(aes(ymin=cn_shade_min, ymax=exp(fit +2*se.fit), x=log10(exp(logNO3))),
               data=mod_CN_Nitrate_pred, 
@@ -339,13 +343,15 @@ make_fig_3h <- function(data_all,mod_CN) {
       geom_line(aes(y=exp(fit)), data=mod_CN_Nitrate_pred, cex = 0.75)+ 
       coord_cartesian(xlim = c(-1.0, 1.5),ylim = c(5, 9.2)) + 
       xlab("log10[NO3]") +
-      ylab("") +
+      ylab("C:N") +
       xlim(-1.0,1.5) + 
       ylim(5,9.2) + 
       scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
       theme_bw(base_size = 12, base_family = "Helvetica") + 
       theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-    }  + theme(axis.text.y=element_blank()) + theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
+    }  + 
+    # theme(axis.text.y=element_blank()) + 
+    theme(legend.position = "none") + scale_color_manual(values=rev(gg_color_hue(4)))
   fig3h <- ggplotly(fig3h)
 }
 
@@ -614,6 +620,27 @@ make_fig_3_new_NP <- function(dest, fig_out_folder,
   server$close()
 }
 
+make_fig_3_NO3only <- function(dest, fig_out_folder, 
+                           mod_CP,
+                           mod_NP,
+                           mod_CN,
+                           data_all,
+                           data_gam) {
+  fig3b <- make_fig_3b(data_all, mod_CP)
+  fig3e <- make_fig_3e(data_all, mod_NP)
+  fig3h <- make_fig_3h(data_all, mod_CN)
+  
+  fig3 <-plotly::subplot(fig3b, 
+                         fig3e,
+                         fig3h,
+                         nrows = 1,
+                         shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE, margin = 0.03,
+                         heights = c(1.0)) %>% layout(height = 200, width = 800)
+  # fig3
+  orca(fig3, dest)
+  server <- orca_serve()
+  server$close()
+}
 
 # Function to plot Figure 4 (for N:P, turn NP = TRUE)
 make_fig_4 <- function(dest,
