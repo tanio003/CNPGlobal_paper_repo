@@ -158,6 +158,7 @@ fig_2a <- function(M.POM_highlat_corr_selected,testRes_selected_highlat, title_n
           col = rev(brewer.rdbu(40)),
           method = "circle", 
           cl.cex = 0.5,
+          tl.cex = 0.5,
           sig.level = c(0.001, 0.01, 0.05), insig = 'label_sig',pch.cex = 0.7,tl.col="black", tl.srt=45,
           title = title_name, mar=c(0,0,1,0),na.label = "NA")
 }
@@ -1706,6 +1707,38 @@ make_plot_model_cv_CNP <- function(dest,
     ggtitle(plottitle) 
   ggsave(dest,
          width = 8, # The width of the plot in inches
+         height = 5)
+}
+
+# Function to plot comparing samples from Version 1 and Version 2
+make_map_ver1ver2 <- function(dest,
+                              fig_out_folder,
+                              dataPOM_all_ver1_surface_binned_1deg,
+                              dataPOM_all_ver2_surface_binned_1deg) {
+  YK <- map_data("world")
+  fig <- ggplot() +
+    coord_cartesian(xlim = c(-179.5, 179.5), ylim = c(-89.5, 89.5), expand = F) + 
+    labs(y = NULL) +
+    xlab("Longitude") + 
+    ylab("Latitude") + 
+    scale_y_continuous(breaks=c(-70,-35, 0, 35, 70)) + 
+    geom_polygon(data = YK, aes(x=long, y = lat, group = group), color = "black", fill = "black") + 
+    geom_point(data = drop_na(dataPOM_all_ver2_surface_binned_1deg,POCavg,PONavg,POPavg), 
+               mapping = aes(x = Longitude, y = Latitude, color="r"), 
+               size = 1.0, 
+               shape = 15) + 
+    geom_point(data = drop_na(dataPOM_all_ver1_surface_binned_1deg,POCavg_uM,PONavg_uM,POPavg_nM), 
+               mapping = aes(x = Longitude, y = Latitude, color = "b"), 
+               size = 1.0, 
+               shape = 15) + 
+    scale_colour_manual(name = "group", values=c("b" = "blue", "r"="red"), 
+                        labels=c("b"="Martiny et al. 2013", "r"="This study")) +
+    theme_bw(base_size = 10, base_family = "Helvetica") +
+    theme(legend.position = "right", legend.box = "horizontal",legend.key.size = unit(0.5, "cm"),
+          legend.title = element_blank()) +
+    theme(panel.border = element_rect(color = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  ggsave(dest,
+         width = 8, 
          height = 5)
 }
 

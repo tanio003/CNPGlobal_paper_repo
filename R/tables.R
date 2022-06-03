@@ -212,7 +212,7 @@ make_cnp_cv_summary_table <- function(data, cv_df, stoich, tabletitle, ...) {
   #   summary(modC)$r.sq
   # )
   Summary_table <- Summary_table %>% 
-    mutate_if(is.numeric, round, digits = 3) %>% arrange(AIC) %>%
+    mutate_if(is.numeric, round, digits = 3) %>% arrange(desc(Rsq_train), AIC) %>%
     gt() %>%
     tab_header(
       title = md(tabletitle)
