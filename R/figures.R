@@ -490,10 +490,6 @@ make_fig_4 <- function(dest,
   # Top Right = Model Confidence 2D map
   modelconf_cp_full <- diffcp_full_PosCount_grid/2000*100
   modelconf_cp_full_plot <- reshape2::melt(modelconf_cp_full)
-  if (NP) {
-    modelconf_cp_full <- diffnp_full_PosCount_grid/2000*100
-    modelconf_cp_full_plot <- reshape2::melt(modelconf_np_full)    
-  }
   modelconf_cp_full_plot$lon <- as.vector(lonlat_grid_lon)
   modelconf_cp_full_plot$lat <- as.vector(lonlat_grid_lat)
   
