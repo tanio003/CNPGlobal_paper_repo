@@ -212,10 +212,10 @@ make_fig_3a <- function(data_all, mod_CP) {
                   alpha=0.4, 
                   inherit.aes=FALSE) +
       geom_line(aes(y=exp(fit)), data=mod_CP_SST_pred, cex = 0.75)+ 
-      coord_cartesian(xlim = c(3,33), ylim = c(60, 280)) + 
+      coord_cartesian(xlim = c(3,31.5), ylim = c(60, 280)) + 
       xlab("") +
       ylab("C:P") +
-      xlim(3,33) + 
+      xlim(3,31.5) + 
       ylim(60,280) + 
       scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
       scale_y_continuous(breaks = c(75, 125, 175, 225, 275),
@@ -239,10 +239,10 @@ make_fig_3d <- function(data_all,mod_NP) {
               alpha=0.4, 
               inherit.aes=FALSE) +
         geom_line(aes(y=exp(fit)), data=mod_NP_SST_pred, cex = 0.75)+ 
-        coord_cartesian(xlim = c(3,33), ylim = c(10, 37)) + 
+        coord_cartesian(xlim = c(3,31.5), ylim = c(10, 37)) + 
         xlab("SST (°C)") +
         ylab("N:P") +
-        xlim(3,33) + 
+        xlim(3,31.5) + 
         ylim(10,37) + 
         scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
         scale_y_continuous(breaks = c(12, 20, 28, 36),
@@ -265,10 +265,10 @@ make_fig_3g <- function(data_all,mod_CN) {
               alpha=0.4, 
               inherit.aes=FALSE) +
         geom_line(aes(y=exp(fit)), data=mod_CN_SST_pred, cex = 0.75)+ 
-        coord_cartesian(xlim = c(3,33),ylim = c(5, 9.2)) + 
+        coord_cartesian(xlim = c(3,31.5),ylim = c(5, 9.2)) + 
         xlab("SST (°C)") +
         ylab("C:N") +
-        xlim(3,33) + 
+        xlim(3,31.5) + 
         ylim(5,9.2) + 
         scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) +        
         theme_bw(base_size = 12, base_family = "Helvetica") + 
@@ -466,7 +466,7 @@ plot_CP_pred_Nutcline_nutlim_new <- function(mod_CP_pred, data, model_name) {
                   inherit.aes=FALSE) +
       # xlim(0,210) + 
       # ylim(60, 280) +   
-      coord_cartesian(xlim = c(0,210), ylim = c(75, 280)) + 
+      coord_cartesian(xlim = c(0,200), ylim = c(75, 280)) + 
       scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
       scale_y_continuous(breaks = c(75, 125, 175, 225, 275),
                          labels = c(75, 125, 175, 225, 275)) +       
@@ -494,9 +494,9 @@ plot_NP_pred_Nutcline_nutlim_new <- function(mod_NP_pred, data, model_name) {
                   data=mod_NP_pred, 
                   alpha=0.3, 
                   inherit.aes=FALSE) +
-      xlim(0,210) + 
+      xlim(0,200) + 
       ylim(12, 37) +
-      coord_cartesian(xlim = c(0,210), ylim = c(12, 37)) + 
+      coord_cartesian(xlim = c(0,200), ylim = c(12, 37)) + 
       scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
       scale_y_continuous(breaks = c(12, 16, 20, 24, 28, 32, 36),
                          labels = c(12, 16, 20, 24, 28,32, 36)) +      
@@ -522,11 +522,11 @@ plot_CN_pred_Nutcline_nutlim_new <- function(mod_CN_pred, data, model_name) {
                   data=mod_CN_pred, 
                   alpha=0.3, 
                   inherit.aes=FALSE) +
-      xlim(0,210) + 
+      xlim(0,200) + 
       ylim(5, 9.5) +
       xlab("Nutricline (m)") +
       ylab("") + 
-      coord_cartesian(xlim = c(0,210), ylim = c(5, 9.5)) + 
+      coord_cartesian(xlim = c(0,200), ylim = c(5, 9.5)) + 
       scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + 
       scale_y_continuous(breaks = c(5, 6, 7, 8, 9),
                          labels = c(5, 6, 7, 8, 9)) +  
