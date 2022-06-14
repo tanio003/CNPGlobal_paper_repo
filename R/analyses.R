@@ -407,7 +407,8 @@ make_mod_CNP_Nutcline_Nutlim_mod <- function(data_all) {
   mod_CNP_Nutcline_Nutlim_mod <- list("mod_CP_Nutcline_Nutlim_mod"= mod_CP_Nutcline_Nutlim_mod, 
                                         "mod_NP_Nutcline_Nutlim_mod" = mod_NP_Nutcline_Nutlim_mod, 
                                         "mod_CN_Nutcline_Nutlim_mod" = mod_CN_Nutcline_Nutlim_mod)
-  return(mod_CNP_Nutcline_Nutlim_mod)
+  # return(mod_CNP_Nutcline_Nutlim_mod)
+  mod_CNP_Nutcline_Nutlim_mod
 }
 
 # Function to predict CNP under different nutrient limitation under varying SST for a given model and prediction data
