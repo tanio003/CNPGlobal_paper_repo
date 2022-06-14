@@ -182,15 +182,18 @@ fig_2b <- function(CNP_highlat_gam_devexpl) {
 }
 
 fig_2b_100p <- function(CNP_highlat_gam_devexpl) {
-  data_percentage <- apply(CNP_highlat_gam_devexpl[1:4,], 2, function(x){x*100/sum(x,na.rm=T)})
+  # data_percentage <- apply(CNP_highlat_gam_devexpl[1:4,], 2, function(x){x*100/sum(x,na.rm=T)})
+  data_percentage <- apply(CNP_highlat_gam_devexpl[4:1,], 2, function(x){x*100/sum(x,na.rm=T)})
   fig <- barplot(data_percentage, width = c(0.5,0.5,0.5,0.5),
-                 col = brewer.pal(nrow(CNP_highlat_gam_devexpl[1:4,]), "Set1"),
+                 # col = brewer.pal(nrow(CNP_highlat_gam_devexpl[1:4,]), "Set1"),
+                 col = rev(brewer.pal(nrow(CNP_highlat_gam_devexpl[1:4,]), "Set1")),
                  # font.axis=2,
                  font.axis= 2,
                  cex.axis = 0.75,
                  cex.names = 0.75,
                  las = 1,
-                 legend = c('SST', 'Nitrate', 'Nutricline', 'Nutricline x Nutlim'),
+                 # legend = c('SST', 'Nitrate', 'Nutricline', 'Nutricline x Nutlim'),
+                 legend = c('Nutricline x Nutlim', 'Nutricline', 'Nitrate', 'SST'),
                  xlim = c(0, ncol(CNP_highlat_gam_devexpl) + 0.2),
                  ylim = c(0, 100),
                  ylab = 'Explained Deviance',
