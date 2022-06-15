@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<View xview="0.23" collection="data_Tanioka22_NatCom_POM_all">
+<GeographicMap>
+<MapDomain lon_max="180.00000" lon_min="-180.00000" lat_max="85.00000" lat_min="-85.00000"/>
+</GeographicMap>
+<MapWindow>
+<Symbol small_size="0.333333" size="-0.1" type="0" color="1"/>
+<Window>
+<Geometry x_offset_bb="2" y_offset_bb="1.5" x_length_bb="11" y_top="85" y_length_bb="7.5" y_bottom="-85" x_projection="100" y_projection="100" x_right="180" x_left="-180"/>
+</Window>
+</MapWindow>
+<DataWindow>
+<Axis axis_color="0" draw_grid="F" auto_label="F"/>
+<AxisVariables>
+<!--Longitude-->
+<xAxis var_list="2" var_id="0" is_reversed="F"/>
+<!--Latitude-->
+<yAxis var_list="2" var_id="1" is_reversed="F"/>
+<!--CP @ Temperature=first-->
+<zAxis var_list="2" var_id="4" is_reversed="F"/>
+</AxisVariables>
+<Modes window_mode="3" window_type="0" plot_mode="2"/>
+<Gridding draw_shaded="T" x_scale_length="3.88333" auto_scale_lengths="T" y_scale_length="3.90428"/>
+<BadEstimateHiding hide="T" max_distance="3"/>
+<DataMark size="0.6" color="0"/>
+<Window font_size="20">
+<Axis cb_align="2"/>
+<Geometry x_offset_bb="2.5" y_offset_bb="11.5" x_length_bb="10.2" y_top="85" y_length_bb="7.5" y_bottom="-85" x_projection="100" y_projection="100" x_right="180" x_left="-180"/>
+<ColorScale non_linearity_start="-0.9675" z_range_start="75" z_range_end="250" non_linearity_end="1.2825"/>
+</Window>
+</DataWindow>
+<DataWindow>
+<Axis axis_color="0" draw_grid="F" auto_label="F"/>
+<AxisVariables>
+<!--Longitude-->
+<xAxis var_list="2" var_id="0" is_reversed="F"/>
+<!--Latitude-->
+<yAxis var_list="2" var_id="1" is_reversed="F"/>
+<!--NP @ Temperature=first-->
+<zAxis var_list="2" var_id="5" is_reversed="F"/>
+</AxisVariables>
+<Modes window_mode="3" window_type="0" plot_mode="2"/>
+<Gridding draw_shaded="T" x_scale_length="3.88333" auto_scale_lengths="T" y_scale_length="3.90428"/>
+<BadEstimateHiding hide="T" max_distance="3"/>
+<DataMark size="0.6" color="0"/>
+<Window font_size="20">
+<Axis cb_align="2"/>
+<Geometry x_offset_bb="16.5" y_offset_bb="11.5" x_length_bb="10.2" y_top="85" y_length_bb="7.5" y_bottom="-85" x_projection="100" y_projection="100" x_right="180" x_left="-180"/>
+<ColorScale non_linearity_start="-1.323" z_range_start="10" z_range_end="35" non_linearity_end="1.827"/>
+</Window>
+</DataWindow>
+<DataWindow>
+<Axis axis_color="0" draw_grid="F" auto_label="F"/>
+<AxisVariables>
+<!--Longitude-->
+<xAxis var_list="2" var_id="0" is_reversed="F"/>
+<!--Latitude-->
+<yAxis var_list="2" var_id="1" is_reversed="F"/>
+<!--CN @ Temperature=first-->
+<zAxis var_list="2" var_id="6" is_reversed="F"/>
+</AxisVariables>
+<Modes window_mode="3" window_type="0" plot_mode="2"/>
+<Gridding draw_shaded="T" x_scale_length="3.88333" auto_scale_lengths="T" y_scale_length="3.90428"/>
+<BadEstimateHiding hide="T" max_distance="3"/>
+<DataMark size="0.6" color="0"/>
+<Window font_size="20">
+<Axis cb_align="2"/>
+<Geometry x_offset_bb="16.5" y_offset_bb="1.5" x_length_bb="10.2" y_top="85" y_length_bb="7.5" y_bottom="-85" x_projection="100" y_projection="100" x_right="180" x_left="-180"/>
+<ColorScale non_linearity_start="-1.5075" z_range_start="5" z_range_end="8.5" non_linearity_end="1.8425"/>
+</Window>
+</DataWindow>
+<IsoSurfaceVariables>
+<!--CP @ Temperature=first-->
+<IsoVariable surface_value="first" var_id="0" surface_var_id="3"/>
+<!--NP @ Temperature=first-->
+<IsoVariable surface_value="first" var_id="1" surface_var_id="3"/>
+<!--CN @ Temperature=first-->
+<IsoVariable surface_value="first" var_id="2" surface_var_id="3"/>
+</IsoSurfaceVariables>
+<CurrentSelection sampleID="0" stationID="1071"/>
+</View>

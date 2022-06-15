@@ -53,7 +53,9 @@ merge_corr_pval <- function(odd_data, even_data, digits = 3) {
                                            "MLD", "pval",
                                 "MLPAR", "pval",
                                 "Chl-a", "pval",
-                                           "% Diatoms", "pval",
+                                "% Diatoms", "pval",
+                                "% Cocco", "pval",
+                                "% Chloro", "pval",
                                 "% Cyano","pval"
                                            ))
   newtable <- as.data.frame(newtable) 
@@ -160,5 +162,77 @@ make_cnp_gam_cesm_summary_table <- function(cesm_lonlat_info, CNP_gam_cesm, ...)
                                             'N:P SSP 370 (2090s)')
   summary_cesm_pred_regional %>% mutate_if(is.numeric, round, digits = 1) %>% export_csv(...)
 }
+
+# Function to create summary table for cross validation of hierarchical GAM models
+make_cnp_cv_summary_table <- function(data, cv_df, stoich, tabletitle, ...) {
+  if (stoich == "CP") {
+    modG <- b1_4vars_nutlim_modG_CP(data)
+    modGS <- b1_4vars_nutlim_modGS_CP(data)
+    modGI <- b1_4vars_nutlim_modGI_CP(data)
+    modS <- b1_4vars_nutlim_modS_CP(data)
+    modI <- b1_4vars_nutlim_modI_CP(data)
+    modC <- b1_4vars_nutlim_modC_CP(data)
+    stoich_mean = log(calc_cnp_global_mean(data)$meancp_global)
+  } else if (stoich == "NP") {
+    modG <- b1_4vars_nutlim_modG_NP(data)
+    modGS <- b1_4vars_nutlim_modGS_NP(data)
+    modGI <- b1_4vars_nutlim_modGI_NP(data)
+    modS <- b1_4vars_nutlim_modS_NP(data)
+    modI <- b1_4vars_nutlim_modI_NP(data)
+    modC <- b1_4vars_nutlim_modC_NP(data)
+    stoich_mean = log(calc_cnp_global_mean(data)$meannp_global)
+  } else if (stoich == "CN") {
+    modG <- b1_4vars_nutlim_modG_CN(data)
+    modGS <- b1_4vars_nutlim_modGS_CN(data)
+    modGI <- b1_4vars_nutlim_modGI_CN(data)
+    modS <- b1_4vars_nutlim_modS_CN(data)
+    modI <- b1_4vars_nutlim_modI_CN(data)
+    modC <- b1_4vars_nutlim_modC_CN(data)
+    stoich_mean = log(calc_cnp_global_mean(data)$meancn_global)
+  }
+  Summary_table <- AIC(
+    modG,
+    modGS,
+    modGI,
+    modS,
+    modI,
+    modC) %>%  
+    rownames_to_column(var= "Model") %>% 
+    mutate(deltaAIC = AIC - min(AIC)) %>%
+    mutate(rmse = with(cv_df, tapply(rmse, model, mean))) %>% 
+    mutate(rmse_norm = rmse/stoich_mean) %>% 
+    mutate(Rsq_train = with(cv_df, tapply(rsq_train, model, mean))) %>% 
+    mutate(Rsq_test = with(cv_df, tapply(rsq_test, model, mean)))
+  # Summary_table$R_squared<- c(
+  #   summary(modG)$r.sq,
+  #   summary(modGS)$r.sq,
+  #   summary(modGI)$r.sq,
+  #   summary(modS)$r.sq,
+  #   summary(modI)$r.sq,
+  #   summary(modC)$r.sq
+  # )
+  Summary_table <- Summary_table %>% 
+    mutate_if(is.numeric, round, digits = 3) %>% arrange(desc(Rsq_train), AIC) %>%
+    gt() %>%
+    tab_header(
+      title = md(tabletitle)
+    ) %>% export_csv(...)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
