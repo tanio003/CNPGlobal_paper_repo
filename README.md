@@ -21,6 +21,7 @@ All processing was done in `R`. This routine uses the [drake R package](https://
 ```r
 install.packages("drake")
 ```
+It also requires the package Orca installed. Follow instructions on https://github.com/plotly/orca on how to install.
 
 Next you need to open an R session with working directory set to the root of the project.
 
