@@ -12,10 +12,8 @@ Rda_files/
 *tmp*
 *.rda
 *.rds
-#.pdf
 *.html
 *.swp
 R/*.swp
 TODO.md
 *~$*
-./*.pdf
