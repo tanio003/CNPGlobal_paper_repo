@@ -68,9 +68,9 @@ plan  <-  drake::drake_plan(
     # cv_cn  = cv_mod(POM_genomes_selected_gam, "CN", npartition = 100, fractest = 0.2, 
     #                file = "output/cv/cv_cn.rds"),
   # Option 2: Load premade cv files  to save time #
-   cv_cp = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_cp.rds"),
-   cv_np = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_np.rds"),
-   cv_cn = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_cn.rds"),
+   cv_cp = readRDS("output/cv/cv_cp.rds"),
+   cv_np = readRDS("output/cv/cv_np.rds"),
+   cv_cn = readRDS("output/cv/cv_cn.rds"),
   
   # Analyses ---------------------------------------------
   Cruise_summary = dplyr::group_by(POM_all, Cruise),
