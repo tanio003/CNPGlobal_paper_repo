@@ -12,9 +12,7 @@ This repository contains code and data needed to reproduce the article:
 
 **When using the data or code from this project, please cite it as:**
 
-Tanioka, T. Garcia, C. A., Larkin, A. A., Garcia, N. S., Fagan, A. J., Martiny, A. C (2022). Initial Submission of Tanioka et al. (2022) (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.6015417
-
-Tatsuro Tanioka, Catherine Garcia, Alyse Larkin et al. Global patterns and drivers of C:N:P in marine ecosystems, 25 February 2022, PREPRINT (Version 1) available at Research Square [https://doi.org/10.21203/rs.3.rs-1344335/v1]
+Tanioka, T. Garcia, C. A., Larkin, A. A., Garcia, N. S., Fagan, A. J., Martiny, A. C (2022). Second version of Tanioka et al. (2022) (v2.0.0). Zenodo. https://doi.org/10.5281/zenodo.6647519
 
 ## Instructions
 
@@ -32,7 +30,7 @@ To reproduce particular targets outlined in `R/plan.R`, do e.g.:
 
 ```r
 source("_drake.R")
-drake::make(plan, targets = c("fig_1_pdf", "fig_2_pdf", "fig_3_pdf", "fig_4_pdf", "ed_fig_1_pdf","sp_table_2"), lock_envir = FALSE)
+drake::make(plan, targets = c("fig_1_pdf", "fig_2_pdf", "fig_3_pdf", "fig_4_pdf", "fig_5_pdf","ed_fig_1_pdf","sp_table_2"), lock_envir = FALSE)
 ```
 
 This example above will create Main Figures 1-4, Extended Data Figure 1, and Table 2 in Supplementary Information as presented in the manuscript along with all its dependencies. 
@@ -47,9 +45,9 @@ source("make.R")
 drake::loadd()
 ```
 
-This whole process should be completed in less than 5 minutes. The process for making the main Figure 4 using 2000 models from GAM posterior distribution will take the longest time (~1-2 minutes). 
+This whole process should be completed in less than 5 minutes. 
 
-Main Figures 1a-c (created with ODV) and Supplementary Figures 1-3 are located in the separate `pics` folder. Supplementary Table 1 is a list of POM samples collected and is not reproduced here. Note that figures created here were subsequently cleaned using Adobe Illustrator for the manuscript.
+Main Figures 2a-c (created with ODV) are located in the separate `pics` folder. Supplementary Table 1 is a list of POM samples collected and is not reproduced here. Note that figures created here were subsequently cleaned using Adobe Illustrator for the manuscript.
 
 ### This paper was produced using the following software and associated packages:
 ```
