@@ -61,16 +61,16 @@ plan  <-  drake::drake_plan(
     # Comment out if cv_CP.rda, cv_NP.rda, cv_CN.rda are already made
     # From this, we use model GI throughout to describe nutricline x nutlim interaction 
   # Option 1: Calculate them de novo (Takes about 5 minutes per cross validation) #
-   # cv_cp  = cv_mod(POM_genomes_selected_gam, "CP", npartition = 100, fractest = 0.2, 
-   #                file = "output/cv/cv_cp.rds"),
-   # cv_np  = cv_mod(POM_genomes_selected_gam, "NP", npartition = 100, fractest = 0.2, 
-   #                file = "output/cv/cv_np.rds"),
-   # cv_cn  = cv_mod(POM_genomes_selected_gam, "CN", npartition = 100, fractest = 0.2, 
-   #                file = "output/cv/cv_cn.rds"),
+    # cv_cp  = cv_mod(POM_genomes_selected_gam, "CP", npartition = 100, fractest = 0.2, 
+    #               file = "output/cv/cv_cp.rds"),
+    # cv_np  = cv_mod(POM_genomes_selected_gam, "NP", npartition = 100, fractest = 0.2, 
+    #               file = "output/cv/cv_np.rds"),
+    # cv_cn  = cv_mod(POM_genomes_selected_gam, "CN", npartition = 100, fractest = 0.2, 
+    #                file = "output/cv/cv_cn.rds"),
   # Option 2: Load premade cv files  to save time #
-  cv_cp = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_cp.rds"),
-  cv_np = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_np.rds"),
-  cv_cn = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_cn.rds"),
+   cv_cp = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_cp.rds"),
+   cv_np = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_np.rds"),
+   cv_cn = readRDS("~/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/output/cv/cv_cn.rds"),
   
   # Analyses ---------------------------------------------
   Cruise_summary = dplyr::group_by(POM_all, Cruise),

@@ -1,6 +1,5 @@
 .rstudio/
 .drake/
-output/
 test/
 Figures/
 Rda_files/
