@@ -30,8 +30,9 @@ This routine loads multiple packages which are found in `R/packages.R`, **so mak
 To reproduce particular targets outlined in `R/plan.R`, do e.g.:
 
 ```r
+drake::clean()
 source("_drake.R")
-drake::make(plan, targets = c("fig_1_pdf", "fig_2_pdf", "fig_3_pdf", "fig_4_pdf", "fig_5_pdf","ed_fig_1_pdf","sp_table_2"), lock_envir = FALSE)
+drake::make(plan, targets = c("fig_1_pdf", "fig_2_pdf", "fig_3_highlat_pdf", "fig_3_lowlat_pdf", "fig_4_pdf", "fig_5_pdf","ed_fig_1_pdf","sp_table_2"), lock_envir = FALSE)
 ```
 
 This example above will create Main Figures 1-4, Extended Data Figure 1, and Table 2 in Supplementary Information as presented in the manuscript along with all its dependencies. 
@@ -41,6 +42,7 @@ This example above will create Main Figures 1-4, Extended Data Figure 1, and Tab
 To reproduce **all** data analyses / figures / tables, and then make them available within an R session, do:
 
 ```r
+drake::clean()
 source("_drake.R")
 source("make.R")
 drake::loadd()
