@@ -1,0 +1,8 @@
+"Region","C:P Historical (2010s)","C:P SSP370 (2090s)","N:P Historical (2010s)","N:P SSP 370 (2090s)"
+"Polar",59.6,65.5,10.4,11.3
+"Subpolar",92.2,104.7,15.6,17.5
+"Subtropical",141,141.9,22.1,21.9
+"Tropical",129.9,129.4,20,19
+"High latitude (|Lat| >= 45)",83.2,94.2,14.2,15.9
+"Low latitude (|Lat| < 45)",136.7,137,21.3,20.7
+"Global",120.1,124.4,19.2,19.4

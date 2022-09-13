@@ -1,0 +1,54 @@
+set memory/size=1000
+
+can data/all
+can var/all
+can reg/all
+! ---------------------------------------------------------------------------------------------------------
+! compare_models_cnp.jnl
+! By Tatsuro Tanioka, 2 Sept 2022
+! Plotting C:P and N:P under present and future environmental conditions
+
+! To run this script, type: "pyferret -nodisplay -script compare_models_cnp.jnl"
+! ---------------------------------------------------------------------------------------------------------
+use "/Users/tatsurotanioka/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/data/CNP_ModelOutputs/CESM2_LENS_GAM_CNP/cnp_hist_ssp370_full.nc"  ! d = 1, Obs-GAM + CESM2-LENS
+use "/Users/tatsurotanioka/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/data/CNP_ModelOutputs/Kwiatkowski18_GBC/QUOTASC3_18010101_21001231_1Y_GOC_11.nc"  ! d = 2, Large POC
+use "/Users/tatsurotanioka/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/data/CNP_ModelOutputs/Kwiatkowski18_GBC/QUOTASC3_18010101_21001231_1Y_GON_11.nc"  ! d = 3, Large PON
+use "/Users/tatsurotanioka/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/data/CNP_ModelOutputs/Kwiatkowski18_GBC/QUOTASC3_18010101_21001231_1Y_GOP_11.nc"  ! d = 4, Large POP
+use "/Users/tatsurotanioka/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/data/CNP_ModelOutputs/Kwiatkowski18_GBC/QUOTASC3_18010101_21001231_1Y_POC_11.nc"  ! d = 5, Small POC
+use "/Users/tatsurotanioka/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/data/CNP_ModelOutputs/Kwiatkowski18_GBC/QUOTASC3_18010101_21001231_1Y_PON_11.nc"  ! d = 6, Small PON
+use "/Users/tatsurotanioka/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/data/CNP_ModelOutputs/Kwiatkowski18_GBC/QUOTASC3_18010101_21001231_1Y_POP_11.nc"  ! d = 7, Small POP
+use "/Users/tatsurotanioka/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/data/CNP_ModelOutputs/Matsumoto20_ERL/190916g.nc" ! d = 8, Matsumoto 2020, ERL 
+use "/Users/tatsurotanioka/Desktop/Project/Tanioka21_CNP_Global/CNPGlobal_paper_repo/data/CNP_ModelOutputs/Tanioka17_GBC/output170207b.nc" ! d = 9, Tanioka 2017, GBC
+
+! ------ 1 ----- ! Defining variables
+let cp_k18 = (goc[d=2] + poc[d=5])/(gop[d=4] + pop[d=7])
+let np_k18 = (gon[d=3] + pon[d=6])/(gop[d=4] + pop[d=7])
+
+let cp_m20 = poc_x[d=8]/pop_x[d=8]
+let np_m20 = pon_x[d=8]/pop_x[d=8]
+
+ 
+let cp_t17 = poc_x[d=9]/pop_x[d=9]
+let np_t17 = pon_x[d=9]/pop_x[d=9]
+
+! ------ 2 ------ ! Making Figures
+
+! w 1; Comparing % change C:P with different models
+set w 1/aspect=0.75:axis 1
+set w/size = 1
+set v ul;sha/lev=(-Inf)(-40,40,5)(Inf)/palette=cmocean_balance/title="GAM" (cpfuture[d=1]-cphist[d=1])/cphist[d=1]*100;go fland
+set v ur;sha/lev=(-Inf)(-40,40,5)(Inf)/palette=cmocean_balance/title="Matsumoto 2020" (cp_m20[x=-180:180,z=0:100@ave,l=8]-cp_m20[x=-180:180,z=0:100@ave,l=6])/cp_m20[x=-180:180,z=0:100@ave,l=6]*100;go fland
+set v ll;sha/lev=(-Inf)(-40,40,5)(Inf)/palette=cmocean_balance/title="Kwiatkowski 2018" (cp_k18[x=-180:180,z=0:100@ave,l=240:249@ave]-cp_k18[x=-180:180,z=0:100@ave,l=160:169@ave])/cp_k18[x=-180:180,z=0:100@ave,l=160:169@ave]*100;go fland
+set v lr;sha/lev=(-Inf)(-40,40,5)(Inf)/palette=cmocean_balance/title="Tanioka 2017" (cp_t17[x=-180:180,z=0:100@ave,l=13:22@ave]-cp_t17[x=-180:180,z=0:100@ave,l=12])/cp_t17[x=-180:180,z=0:100@ave,l=12]*100;go fland
+
+frame/trans/file=ed_fig_6_cp_comparison.pdf
+
+! w 2; Comparing % change N:P with different methods
+set w 2/aspect=0.75:axis 1
+set w/size = 1
+set v ul;sha/lev=(-Inf)(-40,40,5)(Inf)/palette=cmocean_balance/title="GAM" (npfuture[d=1]-nphist[d=1])/nphist[d=1]*100;go fland
+set v ur;sha/lev=(-Inf)(-40,40,5)(Inf)/palette=cmocean_balance/title="Matsumoto 2020" (np_m20[x=-180:180,z=0:100@ave,l=8]-np_m20[x=-180:180,z=0:100@ave,l=6])/np_m20[x=-180:180,z=0:100@ave,l=6]*100;go fland
+set v ll;sha/lev=(-Inf)(-40,40,5)(Inf)/palette=cmocean_balance/title="Kwiatkowski 2018" (np_k18[x=-180:180,z=0:100@ave,l=240:249@ave]-np_k18[x=-180:180,z=0:100@ave,l=160:169@ave])/np_k18[x=-180:180,z=0:100@ave,l=160:169@ave]*100;go fland
+set v lr;sha/lev=(-Inf)(-40,40,5)(Inf)/palette=cmocean_balance/title="Tanioka 2017" (np_t17[x=-180:180,z=0:100@ave,l=13:22@ave]-np_t17[x=-180:180,z=0:100@ave,l=12])/np_t17[x=-180:180,z=0:100@ave,l=12]*100;go fland
+
+frame/trans/file=np_comparison.pdf

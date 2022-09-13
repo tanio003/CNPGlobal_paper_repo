@@ -1,0 +1,9 @@
+ ! NOAA/PMEL TMAP
+ ! PyFerret v7.63 (optimized)
+ ! Darwin 19.6.0 - 10/13/20
+ !  7-Sep-22 15:01     
+
+set mode verify
+use output170207b.nc
+sho d
+list poc_x[x=@ave,y=@ave,k=1]
