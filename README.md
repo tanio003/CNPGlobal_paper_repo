@@ -12,7 +12,7 @@ This repository contains code and data needed to reproduce the article:
 
 **When using the data or code from this project, please cite it as:**
 
-Tanioka, T. Garcia, C. A., Larkin, A. A., Garcia, N. S., Fagan, A. J., Martiny, A. C (2022). Second version of Tanioka et al. (2022) (v2.0.0). Zenodo. https://doi.org/10.5281/zenodo.6647519
+Tanioka, T. Garcia, C. A., Larkin, A. A., Garcia, N. S., Fagan, A. J., Martiny, A. C (2022). Third version of Tanioka et al. (2022), Global C:N:P Paper (v3.0.0). Zenodo. https://doi.org/10.5281/zenodo.7076407
 
 ## Instructions
 
