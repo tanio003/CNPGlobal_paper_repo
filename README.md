@@ -1,4 +1,4 @@
-# Global patterns and drivers of C:N:P in marine ecosystems
+# Global patterns and predictors of C:N:P in marine ecosystems
 
 [![license](https://img.shields.io/badge/license-MIT%20+%20file%20LICENSE-lightgrey.svg)](https://choosealicense.com/)
 [![Ask Us Anything
@@ -8,11 +8,7 @@ Love](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)
 
 This repository contains code and data needed to reproduce the article:
 
-**Tanioka, T. Garcia, C. A., Larkin, A. A., Garcia, N. S., Fagan, A. J., Martiny, A. C.** (*under review*) Global patterns and drivers of C:N:P in marine ecosystems.
-
-**When using the data or code from this project, please cite it as:**
-
-Tanioka, T. Garcia, C. A., Larkin, A. A., Garcia, N. S., Fagan, A. J., Martiny, A. C (2022). Third version of Tanioka et al. (2022), Global C:N:P Paper (v3.0.0). Zenodo. https://doi.org/10.5281/zenodo.7076407
+Tanioka, T., Garcia, C.A., Larkin, A.A. et al. Global patterns and predictors of C:N:P in marine ecosystems. Commun Earth Environ 3, 271 (2022). https://doi.org/10.1038/s43247-022-00603-6
 
 ## Instructions
 
